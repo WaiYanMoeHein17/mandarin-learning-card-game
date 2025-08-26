@@ -4,10 +4,7 @@ import auxillary_functions.search;
 import flashcards.FlashcardSelector;
 import main_page.MainPage;
 import projects.DBConnection;
-import projects.mandarin_learning_card_game;
-import java.awt.Dimension;
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.Connection;
@@ -17,7 +14,6 @@ import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import javax.swing.JComboBox;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
@@ -42,8 +38,6 @@ public class createSet extends javax.swing.JFrame {
     private String description;
     private DefaultTableModel model;
     private String[][] tableData;
-    private projects.mandarin_learning_card_game menuFrame;
-    private FlashcardSelector setFrame;
     private String outputData;
     ArrayList<ArrayList<String>> terms2 = new ArrayList<>();
     //final private String[] accessOptions = { "Private", "Protected", "Public"};
@@ -166,7 +160,6 @@ public class createSet extends javax.swing.JFrame {
         
         model = (DefaultTableModel)this.table.getModel();
         model.setDataVector(tableData, columnNames);
-        Object [] row = new Object[5];
         
         if(access.equals("Protected")){
             PasswordEnter.setVisible(true);
@@ -249,10 +242,7 @@ public class createSet extends javax.swing.JFrame {
                 
     }
   }    
-    
-    
 
-    @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
@@ -835,8 +825,9 @@ public class createSet extends javax.swing.JFrame {
                 PreparedStatement ps = con.prepareStatement(query);
                 ResultSet rs = ps.executeQuery();
 
-                while(rs.next()){
-                    int setNo = rs.getInt("Set number");
+                if(rs.next()){
+                    setNo = rs.getInt("Set number");
+                    //System.out.println(setNo);
                 }
 
                 String query2 = "INSERT INTO `mail`(`Recipient`, `Sender`, `Topic`, `Message`, `DateSent`, `ViewTimes`, `Pinned`) VALUES ('" + requestVerify + "','" + creator + "','Set Verification Required: ActionRequired','ActionRequired: Verify Set\n" + creator +" has created setNumber  [" + setNo + "] \n\n Should the set be verified?','" + dateUpdated + "','1','0')";

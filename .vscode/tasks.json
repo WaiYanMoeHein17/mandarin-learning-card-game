@@ -1,0 +1,120 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "compile-source",
+            "type": "shell",
+            "command": "javac",
+            "args": [
+                "-cp", 
+                "./Product/mandarin_learning_card_game/project/lib/mysql-connector.jar",
+                "-d", 
+                "./Product/mandarin_learning_card_game/project/build/classes",
+                "./Product/mandarin_learning_card_game/project/src/flashcards/Cards.java",
+                "./Product/mandarin_learning_card_game/project/src/projects/DBConnection.java"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "compile-tests",
+            "type": "shell",
+            "command": "javac",
+            "args": [
+                "-cp", 
+                "./Product/mandarin_learning_card_game/project/build/classes;./Product/mandarin_learning_card_game/project/lib/mysql-connector.jar",
+                "-d", 
+                "./Product/mandarin_learning_card_game/project/build/test",
+                "./Product/mandarin_learning_card_game/project/test/flashcards/CardsTest.java",
+                "./Product/mandarin_learning_card_game/project/test/projects/DBConnectionTest.java"
+            ],
+            "group": "build",
+            "dependsOn": "compile-source",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "compile-test-runner",
+            "type": "shell",
+            "command": "javac",
+            "args": [
+                "-cp", 
+                "./Product/mandarin_learning_card_game/project/build/classes;./Product/mandarin_learning_card_game/project/build/test;./Product/mandarin_learning_card_game/project/lib/mysql-connector.jar",
+                "-d", 
+                "./Product/mandarin_learning_card_game/project/build/test",
+                "./Product/mandarin_learning_card_game/project/test/TestRunner.java"
+            ],
+            "group": "build",
+            "dependsOn": "compile-tests",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "run-all-tests",
+            "type": "shell",
+            "command": "java",
+            "args": [
+                "-cp", 
+                "./Product/mandarin_learning_card_game/project/build/classes;./Product/mandarin_learning_card_game/project/build/test;./Product/mandarin_learning_card_game/project/lib/mysql-connector.jar",
+                "TestRunner"
+            ],
+            "group": "test",
+            "dependsOn": "compile-test-runner",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "run-cards-test-only",
+            "type": "shell",
+            "command": "java",
+            "args": [
+                "-cp", 
+                "./Product/mandarin_learning_card_game/project/build/classes;./Product/mandarin_learning_card_game/project/build/test;./Product/mandarin_learning_card_game/project/lib/mysql-connector.jar",
+                "flashcards.CardsTest"
+            ],
+            "group": "test",
+            "dependsOn": "compile-tests",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "run-db-test-only",
+            "type": "shell",
+            "command": "java",
+            "args": [
+                "-cp", 
+                "./Product/mandarin_learning_card_game/project/build/classes;./Product/mandarin_learning_card_game/project/build/test;./Product/mandarin_learning_card_game/project/lib/mysql-connector.jar",
+                "projects.DBConnectionTest"
+            ],
+            "group": "test",
+            "dependsOn": "compile-tests",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        }
+    ]
+}

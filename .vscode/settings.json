@@ -1,0 +1,15 @@
+{
+    "java.project.sourcePaths": [
+        "Product/mandarin_learning_card_game/project/src",
+        "Product/mandarin_learning_card_game/project/test"
+    ],
+    "java.project.outputPath": "Product/mandarin_learning_card_game/project/build",
+    "java.test.sourcePaths": [
+        "Product/mandarin_learning_card_game/project/test"
+    ],
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.configuration.workspaceCacheLimit": 90,
+    "java.project.referencedLibraries": [
+        "Product/mandarin_learning_card_game/project/lib/**/*.jar"
+    ]
+}

@@ -2,7 +2,6 @@
 package main_page;
 
 import auxillary_functions.MailMenu;
-import auxillary_functions.MailSelector;
 import auxillary_functions.search;
 import login.LoginScreen;
 import creator.createSet;
@@ -13,7 +12,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import java.io.FileReader;
 import java.util.Scanner;
@@ -21,8 +19,6 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.Statement;
-import javax.swing.JFormattedTextField;
-import javax.swing.text.NumberFormatter;
 
 public class MainPage extends javax.swing.JFrame {
     

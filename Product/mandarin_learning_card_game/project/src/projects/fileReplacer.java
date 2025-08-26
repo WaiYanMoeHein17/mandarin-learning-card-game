@@ -28,6 +28,7 @@ public class fileReplacer {
                 String line = s.nextLine();
                 csvLines.add(line);
             }
+            s.close();
 
         }catch(FileNotFoundException e){
             JOptionPane.showMessageDialog(null,e, "WARNING", JOptionPane.WARNING_MESSAGE);
