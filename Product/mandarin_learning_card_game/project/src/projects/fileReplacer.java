@@ -1,6 +1,4 @@
-
 package projects;
-
 
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;

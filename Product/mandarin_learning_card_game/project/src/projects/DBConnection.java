@@ -1,5 +1,4 @@
 //learnt from (https://www.javatpoint.com/steps-to-connect-to-the-database-in-java);
-
 package projects;
 
 import java.sql.Connection;
