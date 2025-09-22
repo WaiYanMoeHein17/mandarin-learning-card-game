@@ -1,74 +1,89 @@
+package flashcards_test;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
 import flashcards.Cards;
 
 /**
- * Unit tests for Cards class using simple assertions
+ * Unit tests for Cards class using JUnit framework.
+ * Tests card creation, data access, field validation, and error handling.
  */
 public class CardsTest {
     
-    public static void main(String[] args) {
-        CardsTest test = new CardsTest();
-        test.runAllTests();
-    }
+    private Cards testCard;
+    private char[] starred;
+    private char[] def;
+    private char[] term;
+    private char[] notes;
     
-    public void runAllTests() {
-        System.out.println("Running Cards Tests...");
+    @Before
+    public void setUp() {
+        // Initialize test data
+        starred = new char[]{'Y', 'N', 'Y', 'N', 'Y'};
+        def = new char[]{'t', 't', 'f', 't', 'f'};
+        term = new char[]{'t', 't', 't', 'f', 't'};
+        notes = new char[]{'f', 't', 'f', 't', 'f'};
         
-        testCardsCreation();
-        testCardsDataAccess();
+        testCard = new Cards("Hello", "Ni Hao", "Greeting", "Polite", "Common",
+                           starred, def, term, notes, 1);
+    }
+    
+    @Test
+    public void testCardCreation() {
+        assertNotNull("Card should be created successfully", testCard);
+        assertEquals("Card number should be 1", 1, testCard.getCardNumber());
+    }
+    
+    @Test
+    public void testBasicDataAccess() {
+        assertEquals("Term should match", "Hello", testCard.getTerms());
+        assertEquals("Definition should match", "Ni Hao", testCard.getDefinitions());
+        assertEquals("Notes should match", "Greeting", testCard.getNotes());
+    }
+    
+    @Test
+    public void testStarredStatus() {
+        char[] starredStatus = testCard.getStarred();
+        assertArrayEquals("Starred status should match input", starred, starredStatus);
+    }
+    
+    @Test
+    public void testTermsAndDefinitions() {
+        String terms = testCard.getTerms();
+        String definitions = testCard.getDefinitions();
         
-        System.out.println("All tests completed!");
+        assertNotNull("Terms string should not be null", terms);
+        assertNotNull("Definitions string should not be null", definitions);
+        assertTrue("Should have term content", terms.trim().length() > 0);
+        assertTrue("Should have definition content", definitions.trim().length() > 0);
+        assertTrue("Terms should contain Hello", terms.contains("Hello"));
     }
     
-    public void testCardsCreation() {
-        System.out.print("Test Cards Creation: ");
-        try {
-            // Create sample data for Cards constructor based on actual constructor
-            char[] starred = {'Y', 'N', 'Y', 'N', 'Y'};
-            char[] def = {'t', 't', 'f', 't', 'f'};      // 't' for true definition
-            char[] term = {'t', 't', 't', 'f', 't'};     // 't' for true term
-            char[] notes = {'f', 't', 'f', 't', 'f'};    // 'f' for false note
-            
-            Cards card = new Cards("Hello", "Ni Hao", "Greeting", "Polite", "Common", 
-                                 starred, def, term, notes, 1);
-            
-            if (card != null) {
-                System.out.println("PASSED");
-            }
-        } catch (Exception e) {
-            System.out.println("FAILED - Exception: " + e.getMessage());
-            e.printStackTrace();
-        }
+    @Test
+    public void testCardNumbers() {
+        assertEquals("Card number should be set correctly", 1, testCard.getCardNumber());
     }
     
-    public void testCardsDataAccess() {
-        System.out.print("Test Cards Data Access: ");
-        try {
-            char[] starred = {'Y', 'N', 'Y', 'N', 'Y'};
-            char[] def = {'t', 't', 'f', 't', 'f'};
-            char[] term = {'t', 't', 't', 'f', 't'};
-            char[] notesArray = {'f', 't', 'f', 't', 'f'};
-            
-            Cards card = new Cards("Hello", "Ni Hao", "Greeting", "Polite", "Common", 
-                                 starred, def, term, notesArray, 1);
-            
-            // Test accessible methods
-            int cardNum = card.getCardNumber();
-            String terms = card.getTerms();
-            String definitions = card.getDefinitions();
-            String notes = card.getNotes();
-            
-            if (cardNum == 1 && terms != null && definitions != null && notes != null) {
-                System.out.println("PASSED");
-            } else {
-                System.out.println("FAILED - Data access issues");
-                System.out.println("  Card Number: " + cardNum);
-                System.out.println("  Terms: " + (terms != null ? "OK" : "NULL"));
-                System.out.println("  Definitions: " + (definitions != null ? "OK" : "NULL"));
-                System.out.println("  Notes: " + (notes != null ? "OK" : "NULL"));
-            }
-        } catch (Exception e) {
-            System.out.println("FAILED - Exception: " + e.getMessage());
-            e.printStackTrace();
-        }
+    @Test
+    public void testStarredFields() {
+        char[] starredStatus = testCard.getStarred();
+        assertNotNull("Starred status array should not be null", starredStatus);
+        assertEquals("Starred array should have correct length", 5, starredStatus.length);
+    }
+
+    @Test
+    public void testNotes() {
+        String notes = testCard.getNotes();
+        assertNotNull("Notes string should not be null", notes);
+        assertTrue("Should have notes content", notes.trim().length() > 0);
+    }
+    
+    @Test
+    public void testPrintMethods() {
+        // Testing that print methods don't throw exceptions
+        testCard.printTerms();
+        testCard.printDefinitions();
+        testCard.printNotes();
     }
 }
