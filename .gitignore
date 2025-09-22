@@ -1,2 +1,6 @@
 Documentation
 Cover Page.htm
+build/
+nbproject/ 
+.DS_Store
+.vscode/
