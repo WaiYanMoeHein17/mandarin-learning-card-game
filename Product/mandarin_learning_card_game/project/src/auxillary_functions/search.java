@@ -23,15 +23,39 @@ import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
+/**
+ * The search class provides a graphical user interface for searching and filtering flashcard sets.
+ * It allows users to search sets by name or creator, filter by topic, and sort results by creation
+ * or update date. The class implements a heap sort algorithm for date-based sorting.
+ * 
+ * Key features:
+ * - Search by set name or creator username
+ * - Filter sets by academic subject/topic
+ * - Sort results by creation date or last update date
+ * - Double-click to open selected flashcard sets
+ * - Create new sets directly from search interface
+ */
 public class search extends javax.swing.JFrame {
 
-    //initialise variables
-    
+    /** The username of the currently logged-in user */
     private String currentUser;
+    
+    /** Reference to the previous MainPage frame to return to when closing */
     private MainPage prevFrame;   
+    
+    /** List of flashcard sets matching the current search criteria */
     private ArrayList<SetSelector> searchResults;
+    
+    /** Date formatter for handling creation and update dates */
     private SimpleDateFormat StD;
         
+    /**
+     * Creates a new search window with initial search parameters.
+     * 
+     * @param c The username of the current user
+     * @param p Reference to the previous MainPage frame
+     * @param originalSearch Initial search term to execute
+     */
     public search(String c, MainPage p, String originalSearch) {
         
         initComponents();
@@ -56,61 +80,66 @@ public class search extends javax.swing.JFrame {
         StD=new SimpleDateFormat("dd-MM-yyyy"); 
     }
     
-    public void searching(String searchTerm){
-        
-        searchResults= new ArrayList(); 
+    /**
+     * Performs a search for flashcard sets based on the given search term and current filter settings.
+     * This method queries the database for sets matching the search criteria and updates the results table.
+     * The search can be filtered by:
+     * - Set name or creator name (based on radio button selection)
+     * - Topic/subject area
+     * Results can be sorted by:
+     * - Creation date
+     * - Last update date
+     * in either ascending or descending order using heap sort.
+     *
+     * @param searchTerm The text to search for in set names or creator names
+     */
+    public void searching(String searchTerm) {
+        searchResults = new ArrayList<SetSelector>();
         
         String sortTopic;
-        int results=0;
+        int results = 0;
         
-        try{
+        try {
             sortTopic = (String)TopicPicker2.getSelectedItem();
-        }catch(Exception e){
+        } catch(Exception e) {
             sortTopic = "All";
         }
         
         int sortby;
-
         searchfield.setText(searchTerm);
         
-        Connection con = DBConnection.getConnection();
-        
-        String query = "";
-        
-        if(sortSetname.isSelected()){
-            //search if contains setNames
-            if(sortTopic.equals("All")){
+        try {
+            Connection con = DBConnection.getConnection();
+            PreparedStatement ps = null;
+            String query;
             
-                query = "SELECT * FROM `setdata` WHERE `Set Name` LIKE '%" + searchTerm + "%'";
-            
-            }else{
-                    
-                query = "SELECT * FROM `setdata` WHERE `Set Name` LIKE '%" + searchTerm +"%' AND `SetTopic`='" + sortTopic +"';";
-                
+            if(sortSetname.isSelected()) {
+                // Search by set name
+                if(sortTopic.equals("All")) {
+                    query = "SELECT * FROM `setdata` WHERE `Set Name` LIKE ?";
+                    ps = con.prepareStatement(query);
+                    ps.setString(1, "%" + searchTerm + "%");
+                } else {
+                    query = "SELECT * FROM `setdata` WHERE `Set Name` LIKE ? AND `SetTopic`=?";
+                    ps = con.prepareStatement(query);
+                    ps.setString(1, "%" + searchTerm + "%");
+                    ps.setString(2, sortTopic);
+                }
+            } else {
+                // Search by creator name
+                if(sortTopic.equals("All")) {
+                    query = "SELECT * FROM `setdata` WHERE `Set Creator` LIKE ?";
+                    ps = con.prepareStatement(query);
+                    ps.setString(1, "%" + searchTerm + "%");
+                } else {
+                    query = "SELECT * FROM `setdata` WHERE `Set Creator` LIKE ? AND `SetTopic`=?";
+                    ps = con.prepareStatement(query);
+                    ps.setString(1, "%" + searchTerm + "%");
+                    ps.setString(2, sortTopic);
+                }
             }
-                    
-        }else{
-            //search if contains title
             
-            if(sortTopic.equals("All")){
-
-                query = "SELECT * FROM `setdata` WHERE `Set Creator` LIKE '%" + searchTerm + "%'";
-            
-            }else{
-                    
-                query = "SELECT * FROM `setdata` WHERE `Set Creator` LIKE '%" + searchTerm +"%' AND `SetTopic`='" + sortTopic +"';";
-                
-            }
-            
-        }
-        
-        //System.out.println(query);
-        
-        try{
-
-                PreparedStatement ps = con.prepareStatement(query);
-
-                ResultSet rs = ps.executeQuery();
+            ResultSet rs = ps.executeQuery();
 
                 while(rs.next()){
                     results = results + 1;
@@ -180,9 +209,6 @@ public class search extends javax.swing.JFrame {
                     //int input [] =  {1,6,3,7,3,0,1,7,0,8,5,3,7,8,4,2};
                     
                     int n = searchResults.size();
-                                        
-                    //https://stackoverflow.com/questions/42801624/sorting-an-array-with-heap-sort
-                    //https://stackoverflow.com/questions/7520133/heap-sort-in-c/43912761
                     
                     for(int i=(n/2)-1; i >= 0; i--){
                         heapify(searchResults, n, i,true,sortby);
@@ -210,10 +236,6 @@ public class search extends javax.swing.JFrame {
                 }else{
                 //sort Decending
                     int n = searchResults.size();
-
-                    //https://stackoverflow.com/questions/42801624/sorting-an-array-with-heap-sort
-                    //https://stackoverflow.com/questions/7520133/heap-sort-in-c/43912761
-                    
                     
                     if(sortby==6){
                         for(int i=(n/2)-1; i >= 0; i--){
@@ -276,10 +298,22 @@ public class search extends javax.swing.JFrame {
         model.setDataVector(tableData, colNames);        
     }
     
-    //https://www.geeksforgeeks.org/heap-sort/
-    //code from old program
-    
-    public void heapify( ArrayList<SetSelector> searchResults ,int n, int i,boolean ascending,int sortby){
+    /**
+     * Maintains the heap property for the search results array during heap sort.
+     * This method is used to sort search results by date (either creation or update date)
+     * in either ascending or descending order.
+     * 
+     * The heap property ensures that for each parent node i:
+     * - In ascending order: parent is greater than both children
+     * - In descending order: parent is less than both children
+     *
+     * @param searchResults The list of SetSelector objects to heapify
+     * @param n The size of the heap
+     * @param i The index of the root node of the subtree to heapify
+     * @param ascending True to sort in ascending order, false for descending
+     * @param sortby 6 for creation date, 7 for update date
+     */
+    public void heapify(ArrayList<SetSelector> searchResults, int n, int i, boolean ascending, int sortby) {
         
         try {         
             if(sortby==6){
@@ -385,61 +419,61 @@ public class search extends javax.swing.JFrame {
  
     }
     
-    public void openSet(int setNumber,int rowNo){
-        //Variables need to open flashcard selector (from csv files)
+    /**
+     * Opens a flashcard set for viewing/editing when double-clicked in the search results.
+     * Loads any starred/flagged terms associated with the set from the flaggedTerms.txt file.
+     * If the set has no starred terms record, creates one with default values.
+     *
+     * @param setNumber The unique identifier of the set to open
+     * @param rowNo The row index in the search results table
+     */
+    public void openSet(int setNumber, int rowNo) {
         String[] starredNames = new String[5];
         String starred = "0";
         String starredNamesRaw = "";
-        int setNo=-1;
+        int setNo = -1;
         
-        boolean flag = false;
-
         String fileName = "flaggedTerms.txt";
-        try{
-            Scanner s = new Scanner(new FileReader(fileName));
-            while(s.hasNext()){
+        try (Scanner s = new Scanner(new FileReader(fileName))) {
+            while(s.hasNext()) {
                 String line = s.nextLine();
-                if(line.equals(""+setNumber)){
-                    setNo=Integer.parseInt(line);
-                    //System.out.println("SN" + setNo);
+                if(line.equals(""+setNumber)) {
+                    setNo = Integer.parseInt(line);
                     line = s.nextLine();
-                    starred=line;
-                    //System.out.println(starred);
+                    starred = line;
                     line = s.nextLine();
-                    starredNamesRaw=line;
-                    //System.out.println(starredNamesRaw);
+                    starredNamesRaw = line;
                 }
             }
-        }catch(FileNotFoundException e){
+        } catch(FileNotFoundException e) {
             JOptionPane.showMessageDialog(null,e, "WARNING", JOptionPane.WARNING_MESSAGE);
         }            
         //if setnumber in csv corresponds to database setnumber get data 
         if(setNo!=-1){
             String word = "";
-            ArrayList<String> arraylistWord = new ArrayList();
-            for(int j = 0; j<starredNamesRaw.length();j++){
-                if(starredNamesRaw.charAt(j)==(',')){
+            ArrayList<String> arraylistWord = new ArrayList<>();
+            for(int j = 0; j < starredNamesRaw.length(); j++) {
+                if(starredNamesRaw.charAt(j) == ',') {
                     arraylistWord.add(word);
-                    word="";
-                }else{
-                    word=word+starredNamesRaw.charAt(j);
+                    word = "";
+                } else {
+                    word = word + starredNamesRaw.charAt(j);
                 }
             }
 
-            starredNames=new String[arraylistWord.size()];
-            for(int j = 0; j<arraylistWord.size(); j++){
+            starredNames = new String[arraylistWord.size()];
+            for(int j = 0; j < arraylistWord.size(); j++) {
                 starredNames[j] = arraylistWord.get(j);
             }
         }else{
             try{
-                //https://stackoverflow.com/questions/34628425/writing-to-file-in-netbeans-ide-in-java
                FileWriter fr = new FileWriter("flaggedTerms.txt",true);
                BufferedWriter br = new BufferedWriter(fr);
                System.out.println(setNumber);
                br.write(""+setNumber+"\n0\n,,,,,");
                br.close();
                fr.close();
-               System.out.println("sucess");
+               System.out.println("success");
             }catch(IOException e){
                 System.out.println(e);
                 JOptionPane.showMessageDialog(null,e, "WARNING", JOptionPane.WARNING_MESSAGE);
@@ -447,11 +481,9 @@ public class search extends javax.swing.JFrame {
         }
         
         //System.out.println((searchResults.get(rowNo).getNameOfSet()));
-        FlashcardSelector fcs = new FlashcardSelector(this,currentUser,searchResults.get(rowNo),starredNames,starred);
+        new FlashcardSelector(this, currentUser, searchResults.get(rowNo), starredNames, starred);
     }
-        
-    
-    @SuppressWarnings("unchecked")
+
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 

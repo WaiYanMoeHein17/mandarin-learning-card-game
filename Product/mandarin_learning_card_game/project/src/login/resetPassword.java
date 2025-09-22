@@ -1,61 +1,101 @@
-/*
-    Aim of this class:
-        validate if a user can reset password
-        If valid reset the password in the database
-*/
-
-
-//imports
-
 package login;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import main_page.MainPage;
-import projects.DBConnection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JOptionPane;
+import projects.DBConnection;
 
-
-//class resetPassword 
+/**
+ * The resetPassword class provides the password reset functionality for the 
+ * Mandarin Learning Card Game. It implements a two-step password reset process:
+ * 
+ * 1. User Verification:
+ *    - Validates username exists
+ *    - Verifies user's full name matches the account
+ * 
+ * 2. Password Reset Request:
+ *    - Creates a reset request that requires admin approval
+ *    - Stores old password for recovery if needed
+ *    - Sends notification to admin via internal mail system
+ * 
+ * Security features:
+ * - Requires both username and full name verification
+ * - Admin must approve password changes
+ * - Maintains password history
+ * - All actions are logged with timestamps
+ */
 public class resetPassword extends javax.swing.JFrame {
 
-    //Initialise varibles
+    /** The username of the account requesting password reset */
     private String username;
-    private String forename;
-    private String surname;
-    private String password;
-    private String passwordConfirm;
-    private LoginScreen prevFrame;
-    private String oldPassword;
-          
-    private LocalDate date = LocalDate.now();
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
     
-    //Constructor takes a loginScreen object
+    /** The forename provided for verification */
+    private String forename;
+    
+    /** The surname provided for verification */
+    private String surname;
+    
+    /** The new password to set */
+    private String password;
+    
+    /** Password confirmation to prevent typos */
+    private String passwordConfirm;
+    
+    /** Reference to the login screen that opened this dialog */
+    private LoginScreen prevFrame;
+    
+    /** The current password stored in the database */
+    private String oldPassword;
+    
+    /** Current date for logging the reset request */
+    private LocalDate date = LocalDate.now();
+    
+    /** Date formatter for consistent date formatting */
+    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+    
+    /**
+     * Creates a new password reset dialog.
+     * Initializes the UI components, centers the window on screen, and stores the
+     * parent login screen reference for navigation.
+     * 
+     * @param A The parent LoginScreen instance that created this dialog
+     */
     public resetPassword(LoginScreen A) {
-        
-        //create the frame, make it visible, and center it on the screen
         initComponents();
         this.setLocationRelativeTo(null);
         this.setVisible(true);
-        
-        //saves login screen so we can go back to it
-        prevFrame=A;
+        prevFrame = A;
     }
 
+    /**
+     * Default constructor - not supported.
+     * This class requires a parent LoginScreen reference.
+     * 
+     * @throws UnsupportedOperationException Always thrown as this constructor
+     *         should not be used
+     */
     resetPassword() {
         throw new UnsupportedOperationException("Not supported yet."); 
     }
     
-    //changePassword updates the password value for a username
-    public void changePassword(String p, String u ){
+    /**
+     * Initiates a password reset request for the specified user.
+     * This method:
+     * 1. Updates the user's password in the database, keeping old password for history
+     * 2. Creates a notification for admin approval
+     * 3. Returns to the login screen
+     * 
+     * Password format in database: "oldPassword///newPassword"
+     * 
+     * @param p The new password to set
+     * @param u The username whose password is being reset
+     */
+    public void changePassword(String p, String u) {
     
         //make connection to database
         try {
@@ -86,7 +126,6 @@ public class resetPassword extends javax.swing.JFrame {
         }
     }  
 
-    @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
@@ -311,16 +350,29 @@ public class resetPassword extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    /**
+     * Handles the Cancel button click event.
+     * Returns to the login screen without making any password changes.
+     *
+     * @param evt The action event from the cancel button
+     */
     private void CancelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CancelActionPerformed
-        
-        //go back to loginScreen if cancle button clicked
         prevFrame.setVisible(true);
         this.dispose();
- 
     }//GEN-LAST:event_CancelActionPerformed
 
+    /**
+     * Handles the Request Reset button click event.
+     * Validates the reset request by:
+     * 1. Checking that both password fields match
+     * 2. Verifying username exists and matches provided name
+     * 3. Confirming user wants to proceed with reset
+     * 4. Initiating password change and admin notification
+     *
+     * @param evt The action event from the request reset button
+     */
     private void RequestResetActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RequestResetActionPerformed
-        // get values from input boxes
+        // Get form input values
         username = usernameInput.getText();
         forename = forenameInput.getText();
         surname = surnameInput.getText();
@@ -390,10 +442,15 @@ public class resetPassword extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_RequestResetActionPerformed
 
-     //if the frame is closed go to login screen
+    /**
+     * Handles the window close event (X button or system menu).
+     * Returns to the login screen without making any password changes.
+     *
+     * @param evt The window event from closing the form
+     */
     private void formWindowClosed(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosed
-            prevFrame.setVisible(true);
-            this.dispose();
+        prevFrame.setVisible(true);
+        this.dispose();
     }//GEN-LAST:event_formWindowClosed
 
     private void usernameInputActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_usernameInputActionPerformed
@@ -411,32 +468,57 @@ public class resetPassword extends javax.swing.JFrame {
     private void passwordInpu1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_passwordInpu1ActionPerformed
     }//GEN-LAST:event_passwordInpu1ActionPerformed
 
+    /**
+     * Clears the default placeholder text from the username field on first click.
+     *
+     * @param evt The mouse event from clicking the username field
+     */
     private void usernameInputMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_usernameInputMouseClicked
-        if(usernameInput.getText().equals("Enter Username here")){
+        if (usernameInput.getText().equals("Enter Username here")) {
             usernameInput.setText("");
         }
     }//GEN-LAST:event_usernameInputMouseClicked
 
+    /**
+     * Clears the default placeholder text from the forename field on first click.
+     *
+     * @param evt The mouse event from clicking the forename field
+     */
     private void forenameInputMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_forenameInputMouseClicked
-        if(forenameInput.getText().equals("Enter Forename here")){
+        if (forenameInput.getText().equals("Enter Forename here")) {
             forenameInput.setText("");
         }
     }//GEN-LAST:event_forenameInputMouseClicked
 
+    /**
+     * Clears the default placeholder text from the surname field on first click.
+     *
+     * @param evt The mouse event from clicking the surname field
+     */
     private void surnameInputMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_surnameInputMouseClicked
-        if(surnameInput.getText().equals("Enter Surname here")){
+        if (surnameInput.getText().equals("Enter Surname here")) {
             surnameInput.setText("");
         }
     }//GEN-LAST:event_surnameInputMouseClicked
 
+    /**
+     * Clears the default placeholder text from the password field on first click.
+     *
+     * @param evt The mouse event from clicking the password field
+     */
     private void passwordInputMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_passwordInputMouseClicked
-        if(String.valueOf(passwordInput.getPassword()).equals("passwordInput")){
+        if (String.valueOf(passwordInput.getPassword()).equals("passwordInput")) {
             passwordInput.setText("");
         }
     }//GEN-LAST:event_passwordInputMouseClicked
 
+    /**
+     * Clears the default placeholder text from the password confirmation field on first click.
+     *
+     * @param evt The mouse event from clicking the password confirmation field
+     */
     private void passwordInpu1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_passwordInpu1MouseClicked
-        if(String.valueOf(passwordInpu1.getPassword()).equals("passwordInpu1")){
+        if (String.valueOf(passwordInpu1.getPassword()).equals("passwordInpu1")) {
             passwordInpu1.setText("");
         }
     }//GEN-LAST:event_passwordInpu1MouseClicked

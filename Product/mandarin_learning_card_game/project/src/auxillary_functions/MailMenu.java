@@ -12,82 +12,109 @@ import java.util.Collections;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
-
+/**
+ * MailMenu is a JFrame-based GUI component that displays the user's message inbox.
+ * It shows a table of messages with their topics, senders, and dates, and allows users to:
+ * - View their received messages
+ * - Create new messages
+ * - Handle special messages like password reset requests
+ * - Navigate back to the main page
+ *
+ * The class maintains a list of MailSelector objects representing each message
+ * and handles double-click events to open appropriate message viewer windows.
+ */
 public class MailMenu extends javax.swing.JFrame {
     
+    /** List of all messages in the user's inbox */
     private ArrayList<MailSelector> inbox;
+    
+    /** Number of messages retrieved from database */
     private int results;
+    
+    /** Username of the currently logged-in user */
     private String currentUser;
+    
+    /** Reference to the main page for navigation */
     private MainPage prevFrame;
 
+    /**
+     * Creates a new MailMenu window to display the user's inbox.
+     * 
+     * @param currentUser The username of the currently logged-in user
+     * @param mp The MainPage instance to return to when closing
+     */
     public MailMenu(String currentUser, MainPage mp) {
-        
         initComponents();
-        
         this.setLocationRelativeTo(null);
         this.setVisible(true);
         
-        this.currentUser=currentUser;
+        this.currentUser = currentUser;
         prevFrame = mp;
         
         getAndMakeTable();     
     }
     
-    public void getAndMakeTable(){
-        
+    /**
+     * Retrieves messages from the database and populates the inbox table.
+     * This method:
+     * 1. Fetches all messages for the current user
+     * 2. Creates MailSelector objects for each message
+     * 3. Displays messages in reverse chronological order
+     */
+    public void getAndMakeTable() {
         inbox = new ArrayList<MailSelector>();
                 
-        try{
-            
+        try {
             Connection con = DBConnection.getConnection();
-
-            String query = "SELECT * FROM `mail` WHERE `Recipient`= '" + currentUser+ "'";
-
+            String query = "SELECT * FROM `mail` WHERE `Recipient` = ?";
+            
             PreparedStatement ps = con.prepareStatement(query);
-
+            ps.setString(1, currentUser);
+            
             ResultSet rs = ps.executeQuery();
-
             results = 0;
             
-            while(rs.next()){
-                results = results + 1;
+            while (rs.next()) {
+                results++;
                 
-                int mi = rs.getInt("MailIndex");
-                String sender = rs.getString("Sender");
-                boolean p = rs.getBoolean("Pinned");
-                int vt = rs.getInt("ViewTimes");
-                String ds = rs.getString("DateSent");
-                String m = rs.getString("Message");
-                String t = rs.getString("Topic");
-
-                MailSelector ms = new MailSelector(mi,currentUser, sender, t, m, ds, vt, p);
+                MailSelector ms = new MailSelector(
+                    rs.getInt("MailIndex"),
+                    currentUser,
+                    rs.getString("Sender"),
+                    rs.getString("Topic"),
+                    rs.getString("Message"),
+                    rs.getString("DateSent"),
+                    rs.getInt("ViewTimes"),
+                    rs.getBoolean("Pinned")
+                );
 
                 inbox.add(ms);
-            }                                           
-
-        }catch(Exception e){
-            JOptionPane.showMessageDialog(null,e, "WARNING", JOptionPane.WARNING_MESSAGE);
-            System.out.println(e);
+            }
+            
+            rs.close();
+            ps.close();
+                                           
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Error loading messages: " + e.getMessage(), 
+                "WARNING", JOptionPane.WARNING_MESSAGE);
         }
           
+        // Display newest messages first
         Collections.reverse(inbox);
         
+        // Prepare table data
         DefaultTableModel model = (DefaultTableModel)this.DisplayedResult1.getModel();
-        
         String[][] tableData = new String[results][3];
         
-        for (int i=0; i<inbox.size(); i++){
-            //for (int j=0;j<6;j++){
-                String[] neededData= new String[8];
-                neededData[0]=inbox.get(i).gettopic();
-                neededData[1]=inbox.get(i).getsender();
-                neededData[2]=inbox.get(i).getdateSent();
-                tableData[i]=neededData;
-            //}
+        for (int i = 0; i < inbox.size(); i++) {
+            tableData[i] = new String[] {
+                inbox.get(i).getTopic(),
+                inbox.get(i).getSender(),
+                inbox.get(i).getDateSent()
+            };
         }
 
-        String[] colNames = {"TOPIC","SENDER","DATE SENT"};
-
+        String[] colNames = {"TOPIC", "SENDER", "DATE SENT"};
         model.setDataVector(tableData, colNames); 
     }
     
@@ -311,44 +338,39 @@ public class MailMenu extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_DisplayedResultMouseClicked
 
-    private void DisplayedResult1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_DisplayedResult1MouseClicked
-        //if double clicked
+    /**
+     * Handles double-click events on the inbox table.
+     * Opens the appropriate message viewer based on the message type.
+     */
+    private void DisplayedResult1MouseClicked(java.awt.event.MouseEvent evt) {
         if (evt.getClickCount() == 2) {
-            //System.out.println("DisplayedResult1MouseClicked");
-            //stop listening for new events 
             evt.consume();
-            //get the row which was clicked
-            int column = 1;
+            
             int row = DisplayedResult1.getSelectedRow();
-            //String mailNoStr = DisplayedResult1.getModel().getValueAt(row, column).toString();
-            //int mailNo = Integer.parseInt(mailNoStr);
-            
-            //System.out.println(row);
-           
-            //get the mail which corrosponds to the clicked row
             MailSelector ms = inbox.get(row);
-            //Food and NutrientAdmin
             
-            if(ms.gettopic().equals("RESET PASSWORD REQUEST: ACTION REQUIRED")){
-                System.out.println("SAME");
+            // Handle special messages (password reset, set verification)
+            if (ms.getTopic().equals("RESET PASSWORD REQUEST: ACTION REQUIRED") ||
+                ms.getTopic().equals("Set Verification Required: ActionRequired")) {
+                new MailPasswordResetConfirm(
+                    currentUser, this, ms.getMailIndex(),
+                    ms.getSender(), ms.getTopic(),
+                    ms.getViewTimes(), ms.isPinned(),
+                    ms.getDateSent(), ms.getMessage()
+                );
+            } else {
+                // Open standard message viewer
+                new Mailview(
+                    currentUser, this, ms.getMailIndex(),
+                    ms.getSender(), ms.getTopic(),
+                    ms.getViewTimes(), ms.isPinned(),
+                    ms.getDateSent(), ms.getMessage()
+                );
             }
             
-            //if this row's message has a specialised topic
-            if((ms.gettopic().equals("RESET PASSWORD REQUEST: ACTION REQUIRED"))||(ms.gettopic().equals("Set Verification Required: ActionRequired"))){
-                //open special message viewer
-                MailPasswordResetConfirm mprc = new MailPasswordResetConfirm(currentUser, this, ms.getmailIndex(),ms.getsender(),ms.gettopic(),ms.getviewTimes(),ms.getpinned(),ms.getdateSent(),ms.getmessage());  
-                
-            //otherwise   
-            }else{
-                //open default message viewer
-                Mailview mv = new Mailview(currentUser, this, ms.getmailIndex(),ms.getsender(),ms.gettopic(),ms.getviewTimes(),ms.getpinned(),ms.getdateSent(),ms.getmessage());
-            }
-            
-            //hide this set while the message viewer is visible
             this.setVisible(false);
-            
         }
-    }//GEN-LAST:event_DisplayedResult1MouseClicked
+    }
 
     private void CreateMailActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CreateMailActionPerformed
         MailCreator mc = new MailCreator(this,currentUser);

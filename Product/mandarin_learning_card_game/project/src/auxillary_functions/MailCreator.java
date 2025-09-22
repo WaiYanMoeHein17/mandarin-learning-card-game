@@ -10,51 +10,83 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import javax.swing.JOptionPane;
 
+/**
+ * MailCreator is a JFrame-based GUI component that allows users to compose and send
+ * messages to other users in the system. It supports both new message composition
+ * and forwarding existing messages.
+ * 
+ * The class provides functionality to:
+ * - Compose new messages with recipient, topic, and message content
+ * - Forward existing messages
+ * - Validate recipient usernames
+ * - Store messages in the database
+ */
 public class MailCreator extends javax.swing.JFrame {
     
+    // Reference to previous frame for navigation
     private MailMenu prevFrame;
     private Mailview prevframe;
+    
+    // Indicates if this is a forward operation
     private boolean forward;
+    
+    // Username of the current user sending the message
     private String currentUser;
     
+    // Date handling for message timestamps
     private LocalDate date = LocalDate.now();
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
     
+    // Message details
     private String recipient;
     private String message;
     private String topic;
-    private String dateCreated=date.format(formatter); 
-    
+    private String dateCreated = date.format(formatter);
 
+    /**
+     * Constructor for creating a new message.
+     * 
+     * @param mm The MailMenu instance to return to when closing
+     * @param currentUser The username of the current user
+     */
     public MailCreator(MailMenu mm, String currentUser) {
         initComponents();
         this.setVisible(true);
         this.setLocationRelativeTo(null);
         
-        prevFrame=mm;
+        prevFrame = mm;
         this.currentUser = currentUser;
-        
-        forward=false;
+        forward = false;
     }
     
+    /**
+     * Constructor for forwarding an existing message.
+     * 
+     * @param mv The Mailview instance to return to when closing
+     * @param currentUser The username of the current user
+     * @param topic The topic of the message being forwarded
+     * @param recipient The original recipient's username
+     */
     public MailCreator(Mailview mv, String currentUser, String topic, String recipient) {
-        
-        System.out.println(recipient);
-        
         initComponents();
         this.setVisible(true);
         this.setLocationRelativeTo(null);
         
-        prevframe=mv;
+        prevframe = mv;
         this.currentUser = currentUser;
-        
-        forward=true;
+        forward = true;
         
         enterRecipient.setText(recipient);
         enterTopic.setText(topic);
     }
     
-    private boolean checkUserExists(String user){
+    /**
+     * Checks if a username exists in the database.
+     * 
+     * @param user The username to check
+     * @return true if the user exists, false otherwise
+     */
+    private boolean checkUserExists(String user) {
         
         boolean exists = false;
         
@@ -361,15 +393,20 @@ public class MailCreator extends javax.swing.JFrame {
         }else{
             
             Connection con = DBConnection.getConnection();
+            String query = "INSERT INTO `mail` (`Recipient`, `Sender`, `Topic`, `Message`, `DateSent`, `ViewTimes`, `Pinned`) VALUES (?, ?, ?, ?, ?, '3', '0')";
 
-            String query = "INSERT INTO `mail`(`Recipient`, `Sender`, `Topic`, `Message`, `DateSent`, `ViewTimes`, `Pinned`) VALUES ('"+ recipient +"','" + currentUser + "','" + topic + "','" + message + "','" + dateCreated + "','3','0')";
-
-            try{
-
-                Statement statement = con.createStatement();
-                statement.executeUpdate(query);
-                JOptionPane.showMessageDialog(null,"Mail Sent", "SUCCESS", JOptionPane.WARNING_MESSAGE);
+            try {
+                PreparedStatement ps = con.prepareStatement(query);
+                ps.setString(1, recipient);
+                ps.setString(2, currentUser);
+                ps.setString(3, topic);
+                ps.setString(4, message);
+                ps.setString(5, dateCreated);
                 
+                ps.executeUpdate();
+                ps.close();
+                
+                JOptionPane.showMessageDialog(null, "Mail Sent", "SUCCESS", JOptionPane.INFORMATION_MESSAGE);
                 this.dispose();
 
             }catch(Exception e){
@@ -382,11 +419,10 @@ public class MailCreator extends javax.swing.JFrame {
     }//GEN-LAST:event_CreateMailActionPerformed
 
     private void enterRecipientActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_enterRecipientActionPerformed
-        // TODO add your handling code here:
+        
     }//GEN-LAST:event_enterRecipientActionPerformed
 
     private void enterRecipientMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_enterRecipientMouseClicked
-        //System.out.println("ENUFweknfowNFoWONEf");
         if(enterRecipient.getText().equals("Enter Recipient Username")){
             enterRecipient.setText("");
         }

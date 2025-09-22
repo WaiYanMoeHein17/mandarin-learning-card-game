@@ -6,6 +6,29 @@ import javax.swing.*;
 import javax.swing.JOptionPane; 
 import javax.swing.JFrame;
 
+/**
+ * The FlashCards class provides the main user interface for displaying and
+ * interacting with flashcards in the Mandarin learning game. It allows users
+ * to view, flip, and navigate through their flashcard sets.
+ * 
+ * Key features:
+ * - Display terms and definitions on an interactive card interface
+ * - Flip cards to switch between terms and definitions
+ * - Navigate forward and backward through the flashcard set
+ * - View additional notes for each card
+ * - Mark/flag specific terms for review
+ * - Track progress through the current set
+ * - Support keyboard shortcuts for common actions
+ * 
+ * Navigation controls:
+ * - Space: Flip card
+ * - Left/Right arrows: Previous/Next card
+ * - Notes button: Toggle additional notes
+ * - Progress bar: Shows completion percentage
+ * 
+ * The UI integrates with the DoublyLinkedList structure to manage card
+ * data and navigation, and with FlashcardSelector for set management.
+ */
 public class FlashCards extends javax.swing.JFrame implements KeyListener {
 
     
@@ -15,48 +38,87 @@ public class FlashCards extends javax.swing.JFrame implements KeyListener {
         PrevCard.setVisible(false);
     }
     
+    /** The doubly-linked list containing all flashcards in the current set */
     private DoublyLinkedList DLL;
+    
+    /** Reference to the parent FlashcardSelector window */
     private FlashcardSelector A;
+    
+    /** Flag indicating whether terms (true) or definitions (false) are currently shown */
     private boolean termsVisible = true;
+    
+    /** The currently displayed card node in the linked list */
     private Node currentNode;
+    
+    /** Flag indicating whether additional notes are being displayed */
     private boolean notesShowing = false;
+    
+    /** Current position (1-based) in the flashcard set */
     private int currentIndex;
+    
+    /** Total number of terms/cards in the set */
     private int numberTerms;
+    
+    /** Number of star/flag markers per card */
     private int numberStarred;
     
     
     
     
-    public void prevFrame(FlashcardSelector A){
+    /**
+     * Sets up a reference to the parent FlashcardSelector window.
+     * 
+     * @param A The FlashcardSelector instance to link to
+     */
+    public void prevFrame(FlashcardSelector A) {
         this.A = A;
     }
     
-    
-    public void setDLL(DoublyLinkedList DLL){
+    /**
+     * Initializes the flashcard display with a new set of cards.
+     * Sets up the first card and initializes counters for navigation.
+     * 
+     * @param DLL The doubly-linked list containing the flashcard set
+     */
+    public void setDLL(DoublyLinkedList DLL) {
         this.DLL = DLL;
-        currentNode=DLL.getHead();
+        currentNode = DLL.getHead();
         currentNode.getData().getTerms();  
         flashcardDisplay.setText(currentNode.getData().getTerms());
-        currentIndex=1;
-        numberTerms=DLL.count()-1;
+        currentIndex = 1;
+        numberTerms = DLL.count() - 1;
         updateProgress();
     }
     
-    public void setsetName(String x){
+    /**
+     * Sets the title displayed for the current flashcard set.
+     * 
+     * @param x The title string to display
+     */
+    public void setsetName(String x) {
         SetTitle.setText(x);
     }
     
-    public void flipcard(){
-        if(termsVisible==true){
+    /**
+     * Flips the current flashcard between showing terms and definitions.
+     * Updates the display and termsVisible flag accordingly.
+     */
+    public void flipcard() {
+        if (termsVisible) {
             flashcardDisplay.setText(currentNode.getData().getDefinitions());
-            termsVisible=false;
-        }else{
+            termsVisible = false;
+        } else {
             flashcardDisplay.setText(currentNode.getData().getTerms());
-            termsVisible=true;
+            termsVisible = true;
         }
     }
 
-    public void nextCard(){
+    /**
+     * Advances to the next card in the set. If at the end, prompts user
+     * to either restart or return to selector screen. Updates display and
+     * progress indicators.
+     */
+    public void nextCard() {
         if(currentNode.getNext()!=null){
         currentNode=currentNode.getNext();
         flashcardDisplay.setText(currentNode.getData().getTerms());
@@ -104,34 +166,44 @@ public class FlashCards extends javax.swing.JFrame implements KeyListener {
         
     }
     
-     public void prevCard(){
-        currentNode=currentNode.getPrev();
+    /**
+     * Moves to the previous card in the set. Updates the display,
+     * progress indicators, and navigation button visibility.
+     */
+    public void prevCard() {
+        currentNode = currentNode.getPrev();
         flashcardDisplay.setText(currentNode.getData().getTerms());
-        termsVisible=true;
-        currentIndex-=1;
+        termsVisible = true;
+        currentIndex -= 1;
         updateProgress();
         updateButtonSelected();
-        if(currentIndex!=1){
+        if (currentIndex != 1) {
             PrevCard.setVisible(true);
-        }else{
+        } else {
             PrevCard.setVisible(false);
         }
-        
     }
      
-    public void updateProgress(){
+    /**
+     * Updates the progress display and progress bar based on current position.
+     * Shows current card number out of total cards and calculates percentage.
+     */
+    public void updateProgress() {
         String display = "";
-        if(currentIndex<=numberTerms){
-        display = display + currentIndex+"\n  /\n     " + numberTerms;
+        if (currentIndex <= numberTerms) {
+            display = display + currentIndex + "\n  /\n     " + numberTerms;
         }
         Progress.setText(display);
-        float precentage=((((float)(currentIndex-1)/numberTerms))*100);
-        ProgressBar.setValue((int) precentage);
-        //System.out.println(precentage);
-
+        float percentage = (((float)(currentIndex - 1) / numberTerms) * 100);
+        ProgressBar.setValue((int) percentage);
     }
     
-    public void updateButtonSelected(){
+    /**
+     * Updates the state of starred/flagged term selectors based on
+     * the current card's data. Each term can be individually flagged
+     * for review.
+     */
+    public void updateButtonSelected() {
         
         char[] tempStarred = currentNode.getData().getStarred();     
         
@@ -171,7 +243,14 @@ public class FlashCards extends javax.swing.JFrame implements KeyListener {
         }
     }
     
-    public void updateButtons(int x){
+    /**
+     * Updates the visibility of flag term selectors and their labels based on
+     * the number of available terms. Shows only the relevant number of selectors.
+     * 
+     * @param x The number of terms to show selectors for (1-5)
+     */
+    public void updateButtons(int x) {
+        // First make all buttons visible
         flagtermselector5.setVisible(true);
         flagtermselector4.setVisible(true);
         flagtermselector3.setVisible(true);
@@ -183,30 +262,35 @@ public class FlashCards extends javax.swing.JFrame implements KeyListener {
         lablel4.setVisible(true);
         lablel5.setVisible(true);
         
-        
-        if(x<5){
+        // Then hide buttons based on number of terms
+        if (x < 5) {
             flagtermselector5.setVisible(false);
             lablel5.setVisible(false);
         }
-        if(x<4){
+        if (x < 4) {
             flagtermselector4.setVisible(false);
             lablel4.setVisible(false);
         }
-        if(x<3){
+        if (x < 3) {
             flagtermselector3.setVisible(false);
             lablel3.setVisible(false);
         }
-        if(x<2){
+        if (x < 2) {
             flagtermselector2.setVisible(false);
             lablel2.setVisible(false);
         }
-        if(x<1){
+        if (x < 1) {
             flagtermselector1.setVisible(false);
             lablel1.setVisible(false);
         }
     }
     
-    public void setLabelName(String x []){
+    /**
+     * Sets the labels for each term selector button.
+     * 
+     * @param x Array of strings containing labels for each term selector (length 5)
+     */
+    public void setLabelName(String[] x) {
         lablel1.setText(x[0]);
         lablel2.setText(x[1]);
         lablel3.setText(x[2]);
@@ -214,26 +298,40 @@ public class FlashCards extends javax.swing.JFrame implements KeyListener {
         lablel5.setText(x[4]);
     }
     
-    public void setNumberStarred(int x){
-        numberStarred=x;
+    /**
+     * Sets the number of terms that can be starred/flagged per card.
+     * 
+     * @param x Number of terms that can be flagged
+     */
+    public void setNumberStarred(int x) {
+        numberStarred = x;
     }
     
-   //this method did not work:
+    /**
+     * Note: This method is superseded by flashcardDisplayKeyPressed.
+     * Keyboard events are handled in the text pane's key listener instead.
+     */
     @Override
     public void keyPressed(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_SPACE)
-        {
-          System.out.println("Flipped");
-        }
+        // Handled by flashcardDisplayKeyPressed
     }   
-        @Override
+
+    /**
+     * Not used in this implementation.
+     * Keyboard events are handled in keyPressed.
+     */
+    @Override
     public void keyTyped(KeyEvent e) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        // Not implemented
     }
 
+    /**
+     * Not used in this implementation.
+     * Keyboard events are handled in keyPressed.
+     */
     @Override
     public void keyReleased(KeyEvent e) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        // Not implemented
     }
     
     
@@ -520,63 +618,82 @@ public class FlashCards extends javax.swing.JFrame implements KeyListener {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void FlipCardActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FlipCardActionPerformed
+    /**
+     * Handles clicks on the flip card button.
+     * Toggles between showing terms and definitions.
+     */
+    private void FlipCardActionPerformed(java.awt.event.ActionEvent evt) {
         flipcard();
-    }//GEN-LAST:event_FlipCardActionPerformed
+    }
 
-    private void flagtermselector5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_flagtermselector5ActionPerformed
-        int x;
-        x=(currentNode.getData().getCardNumber()-1)*numberStarred+5;
-        if (flagtermselector5.isSelected()){
-            A.changeStarred(x);
-        }else{
-            A.changeStarred(x);
-        }
-    }//GEN-LAST:event_flagtermselector5ActionPerformed
+    /**
+     * Handles changes to the fifth term's star/flag status.
+     * Updates the flashcard selector when this term is starred/unstarred.
+     */
+    private void flagtermselector5ActionPerformed(java.awt.event.ActionEvent evt) {
+        int termIndex = (currentNode.getData().getCardNumber() - 1) * numberStarred + 5;
+        A.changeStarred(termIndex);
+    }
 
-    private void flagtermselector3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_flagtermselector3ActionPerformed
-        int x;
-        x=(currentNode.getData().getCardNumber()-1)*numberStarred+3;
-        if (flagtermselector3.isSelected()){
-            A.changeStarred(x);
-        }else{
-            A.changeStarred(x);
-        }
-    }//GEN-LAST:event_flagtermselector3ActionPerformed
+    /**
+     * Handles changes to the third term's star/flag status.
+     * Updates the flashcard selector when this term is starred/unstarred.
+     */
+    private void flagtermselector3ActionPerformed(java.awt.event.ActionEvent evt) {
+        int termIndex = (currentNode.getData().getCardNumber() - 1) * numberStarred + 3;
+        A.changeStarred(termIndex);
+    }
 
-    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-        if(notesShowing==false){
+    /**
+     * Handles clicks on the notes button.
+     * Toggles between showing the current card's notes and its terms/definitions.
+     */
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {
+        if (!notesShowing) {
             flashcardDisplay.setText(currentNode.getData().getNotes());
-            notesShowing=true;
-        }else{
-            if(termsVisible == true){
+            notesShowing = true;
+        } else {
+            if (termsVisible) {
                 flashcardDisplay.setText(currentNode.getData().getTerms());
-            }else{
+            } else {
                 flashcardDisplay.setText(currentNode.getData().getDefinitions());
             }
-        notesShowing=false;
+            notesShowing = false;
         }
-    }//GEN-LAST:event_jButton3ActionPerformed
+    }
 
-    private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
+    /**
+     * Handles window closing events.
+     * Returns to the flashcard selector screen.
+     */
+    private void formWindowClosing(java.awt.event.WindowEvent evt) {
         A.setVisible(true);     
-    }//GEN-LAST:event_formWindowClosing
+    }
 
-    private void formKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_formKeyPressed
-    
-    }//GEN-LAST:event_formKeyPressed
+    /**
+     * Not used - keyboard events are handled in flashcardDisplayKeyPressed.
+     */
+    private void formKeyPressed(java.awt.event.KeyEvent evt) {
+        // Handled by flashcardDisplayKeyPressed
+    }
 
-    private void flashcardDisplayKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_flashcardDisplayKeyPressed
-    if(evt.getKeyCode()==KeyEvent.VK_SPACE){
-        flipcard();
+    /**
+     * Handles keyboard navigation in the flashcard display:
+     * - Space: Flip card
+     * - Left Arrow: Previous card
+     * - Right Arrow: Next card
+     */
+    private void flashcardDisplayKeyPressed(java.awt.event.KeyEvent evt) {
+        if (evt.getKeyCode() == KeyEvent.VK_SPACE) {
+            flipcard();
+        }
+        if (evt.getKeyCode() == KeyEvent.VK_LEFT) {
+            prevCard();
+        }
+        if (evt.getKeyCode() == KeyEvent.VK_RIGHT) {
+            nextCard();
+        }
     }
-    if(evt.getKeyCode()==KeyEvent.VK_LEFT){
-        prevCard();
-    }
-    if(evt.getKeyCode()==KeyEvent.VK_RIGHT){
-        nextCard();
-    }
-    }//GEN-LAST:event_flashcardDisplayKeyPressed
 
     private void NextCardActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_NextCardActionPerformed
         nextCard();

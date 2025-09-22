@@ -1,93 +1,90 @@
-/*
-    what this class does:
-        every row of data in the set is made into a card from flashcardSelector
-        every card is added to a DDL through a node
-        According to the current Node selected, the data from here is displayed in the flashcard class which has the UI
-*/
 package flashcards;
 
+/**
+ * The Cards class represents a single flashcard in the Mandarin learning card game.
+ * Each card is created from a row of data in a flashcard set and can contain:
+ * - Multiple terms in different languages/forms
+ * - Definitions for learning and practice
+ * - Additional notes for context or memory aids
+ * - Starred status for marking important or difficult terms
+ * 
+ * This class is designed to work with the doubly-linked list structure in the 
+ * flashcard system, where each card becomes a node in the list. The card's data
+ * is displayed in the UI through the Flashcard class.
+ * 
+ * Key features:
+ * - Supports up to 5 different terms/translations per card
+ * - Flexible marking of which fields are terms vs definitions
+ * - Tracking of starred/important terms
+ * - Card numbering for navigation and progress tracking
+ */
 public class Cards {
     
-    //initialise instance variables
+    /** Raw data array containing all fields (terms, definitions, notes) for this card */
     private String[] data = new String[5];
+    
+    /** Number of definition fields in this card */
     private int numDefinitions;
+    
+    /** Number of term fields in this card */
     private int numTerms;
+    
+    /** Number of additional note fields in this card */
     private int numNotes;
-    private String terms[];
-    private String definitions[];
-    private String additionalNotes[];
-    private char starred[];
+    
+    /** Array of terms extracted from the data array */
+    private String[] terms;
+    
+    /** Array of definitions extracted from the data array */
+    private String[] definitions;
+    
+    /** Array of additional notes extracted from the data array */
+    private String[] additionalNotes;
+    
+    /** Array indicating which fields are starred/marked as important */
+    private char[] starred;
+    
+    /** Position of this card in the flashcard set */
     private int cardNumber;
     
-    //Constructor (takes in 5 terms, the starred terms, the terms, ann definitions
-    public Cards(String a, String b, String c, String d, String e,char s[],char def[], char term[],char notes[],int cardNo){
+    /**
+     * Creates a new flashcard with the specified content and metadata.
+     * 
+     * @param a First field content (term/definition/note)
+     * @param b Second field content (term/definition/note)
+     * @param c Third field content (term/definition/note)
+     * @param d Fourth field content (term/definition/note)
+     * @param e Fifth field content (term/definition/note)
+     * @param s Array marking which fields are starred ('t' for starred)
+     * @param def Array marking which fields are definitions ('t' for definition)
+     * @param term Array marking which fields are terms ('t' for term)
+     * @param notes Array marking which fields are notes ('t' for note)
+     * @param cardNo Position of this card in the set
+     */
+    public Cards(String a, String b, String c, String d, String e, 
+                char[] s, char[] def, char[] term, char[] notes, int cardNo) {
         
-        //add the terms to an array
-        data[0]=a;
-        data[1]=b;
-        data[2]=c;
-        data[3]=d;
-        data[4]=e;
+        // Store the raw field data
+        data[0] = a;
+        data[1] = b;
+        data[2] = c;
+        data[3] = d;
+        data[4] = e;
         
-        //get number of of definitions
-        numDefinitions = 0;
-        for (int i=0;i<5;i++){
-            if(def[i]=='t'){
-                numDefinitions = numDefinitions +1;
-            }
-        }
-        
-        //make aray for defintions
+        // Count and collect definitions
+        numDefinitions = countFieldType(def);
         definitions = new String[numDefinitions];
+        populateFieldArray(definitions, data, def);
         
-        //add defintions to array
-        int tempCount = 0;
-            for (int i=0;i<5;i++){
-                if(def[i]=='t'){
-                    definitions[tempCount]= data[i];
-                    tempCount+=1;
-                }
-            }
-                
-        //repeat for terms        
-        //get number of of terms
-        numTerms = 0;
-        for (int i=0;i<5;i++){
-            if(term[i]=='t'){
-                numTerms = numTerms +1;
-            }
-        }
-        
-        //make aray for terms
+        // Count and collect terms
+        numTerms = countFieldType(term);
         terms = new String[numTerms];
-        //add terms to array
-        tempCount = 0;
-            for (int i=0;i<5;i++){
-                if(term[i]=='t'){
-                    terms[tempCount]=data[i];
-                    tempCount+=1;
-                }
-            }
+        populateFieldArray(terms, data, term);
         
-        //repeat for notes        
-        //get number of of notes
-        tempCount = 0;
-        for (int i=0;i<5;i++){
-            if(notes[i]=='t'){
-                numNotes = numNotes +1;
-            }
-        }
-        
-        //make aray for notes
+        // Count and collect notes
+        numNotes = countFieldType(notes);
         additionalNotes = new String[numNotes];
-        //add notes to array
-        tempCount = 0;
-            for (int i=0;i<5;i++){
-                if(notes[i]=='t'){
-                    additionalNotes[tempCount]=data[i];
-                    tempCount+=1;
-                }
-            }    
+        populateFieldArray(additionalNotes, data, notes);
         // the starred array is copied
         starred = s;
         cardNumber=cardNo;
@@ -96,27 +93,65 @@ public class Cards {
   
     }
     
-    //print the terms
-    public void printTerms(){
-        //System.out.println("Printing Terms");
-        for(int i=0; i<terms.length; i++){
-            System.out.println(terms[i]);
+    /**
+     * Prints all terms in this flashcard to the console.
+     * Used for debugging and verification purposes.
+     */
+    public void printTerms() {
+        for(int i = 0; i < terms.length; i++) {
+            System.out.println("Term " + (i+1) + ": " + terms[i]);
         }
     }
     
-    //print the definitions
-    public void printDefintions(){
-        //System.out.println("Printing defs");
-        for(int i=0; i<definitions.length; i++){
-            System.out.println(definitions[i]);
+    /**
+     * Prints all definitions in this flashcard to the console.
+     * Used for debugging and verification purposes.
+     */
+    public void printDefinitions() {
+        for(int i = 0; i < definitions.length; i++) {
+            System.out.println("Definition " + (i+1) + ": " + definitions[i]);
         }
     }
     
-    //print the notes
-    public void printNotes(){
-        //System.out.println("Printing defs");
-        for(int i=0; i<additionalNotes.length; i++){
-            //System.out.println(additionalNotes[i]);
+    /**
+     * Prints all additional notes in this flashcard to the console.
+     * Used for debugging and verification purposes.
+     */
+    public void printNotes() {
+        for(int i = 0; i < additionalNotes.length; i++) {
+            System.out.println("Note " + (i+1) + ": " + additionalNotes[i]);
+        }
+    }
+    
+    /**
+     * Counts how many fields of a given type exist in the card.
+     * 
+     * @param typeArray Array marking field types with 't' for true
+     * @return Number of fields marked as this type
+     */
+    private int countFieldType(char[] typeArray) {
+        int count = 0;
+        for (int i = 0; i < 5; i++) {
+            if (typeArray[i] == 't') {
+                count++;
+            }
+        }
+        return count;
+    }
+    
+    /**
+     * Populates a target array with fields of a specific type from the source data.
+     * 
+     * @param targetArray Array to populate with matching fields
+     * @param sourceData Source data array containing all fields
+     * @param typeArray Array marking which fields to include with 't'
+     */
+    private void populateFieldArray(String[] targetArray, String[] sourceData, char[] typeArray) {
+        int targetIndex = 0;
+        for (int i = 0; i < 5; i++) {
+            if (typeArray[i] == 't') {
+                targetArray[targetIndex++] = sourceData[i];
+            }
         }
     }
     

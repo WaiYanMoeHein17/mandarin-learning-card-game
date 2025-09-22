@@ -9,38 +9,50 @@ import projects.DBConnection;
 import java.awt.Color;
 import javax.swing.JOptionPane;
 
+/**
+ * The LoginScreen class provides the main login interface for the Mandarin Learning Card Game.
+ * It allows users to:
+ * - Log in with existing username/password
+ * - Create a new account
+ * - Reset forgotten passwords
+ * - Access help documentation
+ * 
+ * The class handles authentication against a database and manages navigation
+ * to other screens like account creation, password reset, and the main application.
+ * It uses a MySQL database through JDBC for user authentication.
+ */
 public class LoginScreen extends javax.swing.JFrame {
 
-    //intialise variables
-    //private String currentUser="Jimmy";
+    /** The username of the currently logged in user */
     private String userID;
         
+    /**
+     * Creates a new LoginScreen window with initialized components.
+     * Sets up the UI elements including:
+     * - Username and password input fields
+     * - Login and Create Account buttons
+     * - Forgot Password link (styled as underlined blue text)
+     * - Centers the window on screen
+     */
     public LoginScreen() {
         initComponents();
-            String forgetPassword  = "<html><u>forgot password</u></html>";
-            forgotPassword.setText(forgetPassword);  
-            
-            forgotPassword.setForeground(new Color (26,0,255));
-
+        String forgetPassword = "<html><u>forgot password</u></html>";
+        forgotPassword.setText(forgetPassword);
+        forgotPassword.setForeground(new Color(26, 0, 255));
         this.setLocationRelativeTo(null);
         this.setVisible(true);
-        
+    }
+
+    /**
+     * Opens the main application window after successful login.
+     * Creates a new MainPage instance with the current user's credentials
+     * and disposes of the login window.
+     */
+    public void openMainPage() {
+        new MainPage(this, userID); // Create and show main page
+        this.dispose(); // Close login window
     }
     
-    
-    public void openMainPage(){
-        
-        MainPage mp = new MainPage(this,userID);
-                 
-        this.dispose();
-    }
-    /*
-    public String getCurrentUser(){
-        return currentUser;
-    }
-    */
-    
-    @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
@@ -205,19 +217,23 @@ public class LoginScreen extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    /**
+     * Handles the Login button click event. Validates the entered username/password
+     * against the database and either:
+     * - Opens the main application if credentials are valid
+     * - Shows an error message if credentials are invalid
+     * - Shows a database connection error if database is unreachable
+     *
+     * @param evt The action event from the login button
+     */
     private void loginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loginActionPerformed
-        
         String username = usernameInput.getText();
-        
-        String password=String.valueOf(passwordInput.getPassword());
-        
-        //getDB values
+        String password = String.valueOf(passwordInput.getPassword());
         
         Connection con = DBConnection.getConnection();
-        
         String query = "SELECT * FROM users WHERE Username=? AND Password=?";
         
-        try{
+        try {
             
             PreparedStatement ps = con.prepareStatement(query);
             
@@ -261,42 +277,94 @@ public class LoginScreen extends javax.swing.JFrame {
         
     }//GEN-LAST:event_loginActionPerformed
 
+    /**
+     * Handles the Create Account button click event.
+     * Opens the new user registration window and hides the login screen.
+     *
+     * @param evt The action event from the create account button
+     */
     private void createAccountActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_createAccountActionPerformed
         NewUser nu = new NewUser(this);
         nu.setVisible(true);
         this.setVisible(false);
-        
-        
     }//GEN-LAST:event_createAccountActionPerformed
 
+    /**
+     * Handles the username input field's action event.
+     * Currently not used but preserved for future functionality.
+     *
+     * @param evt The action event from the username field
+     */
     private void usernameInputActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_usernameInputActionPerformed
-        // TODO add your handling code here:
+        // No action needed at this time
     }//GEN-LAST:event_usernameInputActionPerformed
 
+    /**
+     * Handles clicks on the "forgot password" link.
+     * Opens the password reset window and changes the link color to indicate it was clicked.
+     *
+     * @param evt The mouse event from clicking the forgot password link
+     */
     private void forgotPasswordMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_forgotPasswordMouseClicked
-    resetPassword rp = new resetPassword(this);
-    this.setVisible(false);
-    forgotPassword.setForeground(new Color (91,16,183));
+        new resetPassword(this); // Create and show password reset window
+        this.setVisible(false);
+        forgotPassword.setForeground(new Color(91, 16, 183));
     }//GEN-LAST:event_forgotPasswordMouseClicked
 
+    /**
+     * Handles clicks in the username input field.
+     * Clears the default placeholder text when the field is first clicked.
+     *
+     * @param evt The mouse event from clicking the username field
+     */
     private void usernameInputMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_usernameInputMouseClicked
-        if(usernameInput.getText().equals("Enter Username here")){
+        if (usernameInput.getText().equals("Enter Username here")) {
             usernameInput.setText("");
         }
     }//GEN-LAST:event_usernameInputMouseClicked
 
+    /**
+     * Handles clicks in the password input field.
+     * Clears the default placeholder text when the field is first clicked.
+     *
+     * @param evt The mouse event from clicking the password field
+     */
     private void passwordInputMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_passwordInputMouseClicked
-        if(String.valueOf(passwordInput.getPassword()).equals("jPasswordField1")){
+        if (String.valueOf(passwordInput.getPassword()).equals("jPasswordField1")) {
             passwordInput.setText("");
         }
     }//GEN-LAST:event_passwordInputMouseClicked
 
+    /**
+     * Handles the password input field's action event.
+     * Currently not used but preserved for future functionality.
+     *
+     * @param evt The action event from the password field
+     */
     private void passwordInputActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_passwordInputActionPerformed
-        // TODO add your handling code here:
+        // No action needed at this time
     }//GEN-LAST:event_passwordInputActionPerformed
 
+    /**
+     * Handles the Help button click event.
+     * Displays a help message dialog with instructions for:
+     * - Logging in
+     * - Creating a new account
+     * - Resetting a forgotten password 
+     * - Getting additional support
+     *
+     * @param evt The action event from the help button
+     */
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        JOptionPane.showMessageDialog(null," Enter your username and password in the corrosponding boxes then click the 'Login' button. \n If you need a new account press the 'Create Account' button. \n To reset a password press 'Forgot Password' and follow ensuing instructions. \n If the previous instructions do not help or there are other issues please contact the following \n Help Email: ******************** \n School Website: **************** " , "Help", JOptionPane.QUESTION_MESSAGE);
+        JOptionPane.showMessageDialog(null,
+            " Enter your username and password in the corrosponding boxes then click the 'Login' button. \n" +
+            " If you need a new account press the 'Create Account' button. \n" +
+            " To reset a password press 'Forgot Password' and follow ensuing instructions. \n" +
+            " If the previous instructions do not help or there are other issues please contact the following \n" +
+            " Help Email: ******************** \n" +
+            " School Website: **************** ",
+            "Help",
+            JOptionPane.QUESTION_MESSAGE);
     }//GEN-LAST:event_jButton1ActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

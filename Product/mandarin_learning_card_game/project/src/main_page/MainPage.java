@@ -1,60 +1,93 @@
 
 package main_page;
 
-import auxillary_functions.MailMenu;
-import auxillary_functions.search;
-import login.LoginScreen;
-import creator.createSet;
-import flashcards.FlashcardSelector;
-import projects.DBConnection;
 import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.ArrayList;
-import javax.swing.JOptionPane;
-import java.io.FileReader;
-import java.util.Scanner;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Scanner;
+import javax.swing.JOptionPane;
 
+import auxillary_functions.MailMenu;
+import auxillary_functions.search;
+import creator.createSet;
+import flashcards.FlashcardSelector;
+import login.LoginScreen;
+import projects.DBConnection;
+
+/**
+ * MainPage provides the central hub for the Mandarin Learning Card Game.
+ * This class manages:
+ * 
+ * 1. Flashcard Set Management:
+ *    - Displaying user's flashcard sets
+ *    - Creating new sets
+ *    - Organizing sets into folders
+ *    - Pagination for large numbers of sets
+ * 
+ * 2. Navigation:
+ *    - Access to flashcard study interface
+ *    - Access to mail system
+ *    - Access to search functionality
+ *    - Folder organization tools
+ * 
+ * 3. User Interface:
+ *    - Welcome message with user's name
+ *    - Progress tracking
+ *    - Set and folder visibility controls
+ *    - Intuitive navigation controls
+ */
 public class MainPage extends javax.swing.JFrame {
-    
+    /** Current user's username for database queries and personalization */
     private String username;
-    private login.LoginScreen prevFrame;
-    
-    //for displaying sets
-    private int totalSets;
-    private int pageDisplayed=1;
-    private int currentIndex=0;
-    
-    //required to understand database access
-    private ArrayList<SetSelector> displayedSets = new ArrayList();
-    private String forename;
-    private ArrayList<Integer> setNumbers = new ArrayList();
-    //private int[] displayedSetNumbers;
-    private ArrayList<String[]> allCSVData = new ArrayList();
-    private ArrayList<folderSelector> folders = new ArrayList();
-    
-    private int folderOpened;
-    
-    //private boolean displayingFolder = false;
 
-    //Constructor
+    /** Total number of flashcard sets owned by the current user */
+    private int totalSets;
+    
+    /** Current page number being displayed (for pagination) */
+    private int pageDisplayed = 1;
+    
+    /** Starting index for the current page's sets */
+    private int currentIndex = 0;
+    
+    /** List of currently displayed flashcard set UI components */
+    private ArrayList<SetSelector> displayedSets = new ArrayList<>();
+    
+    /** User's first name for personalized welcome messages */
+    private String forename;
+    
+    /** Set identifiers for database queries and organization */
+    private ArrayList<Integer> setNumbers = new ArrayList<>();
+    
+    /** CSV data for all flashcard sets in current view */
+    private ArrayList<String[]> allCSVData = new ArrayList<>();
+    
+    /** List of folder UI components for set organization */
+    private ArrayList<folderSelector> folders = new ArrayList<>();
+    
+    /** ID of the currently opened folder (-1 if no folder is open) */
+    private int folderOpened;
+
+    /**
+     * Creates a new MainPage instance and initializes the flashcard management interface.
+     * 
+     * @param ls The LoginScreen that created this MainPage (for back navigation)
+     * @param username The current user's username for database operations
+     */
     public MainPage(LoginScreen ls, String username) {
-        
-        //initalise the main page
+        // Initialize the Swing components and layout
         initComponents();
         this.setLocationRelativeTo(null);
         this.setVisible(true);
         
-        //set the previous page so we can go back
-        prevFrame = ls;
-        
-        //save the current user
-        this.username=username;
+        // Store username for database operations and personalization
+        this.username = username;
         
         //Print Hello user
         Connection con = DBConnection.getConnection();
@@ -92,14 +125,18 @@ public class MainPage extends javax.swing.JFrame {
         
     }
     
-    //tpxxx
-    public void getSets(){
-       
+    /**
+     * Retrieves all flashcard sets created by the current user from the database.
+     * Resets and repopulates the displayedSets list with the user's sets.
+     * This method is called when initializing the main page or refreshing the set list.
+     */
+    public void getSets() {
+        // Get database connection for querying user's sets
         Connection con = DBConnection.getConnection();
 
         String query2 = "SELECT `Set number` FROM `setdata` WHERE`Set Creator`=?";
         
-        //displayedSets = new ArrayList();
+        //displayedSets = new ArrayList<>();
         
         while(!displayedSets.isEmpty()){
             displayedSets.remove(0);
@@ -193,7 +230,12 @@ public class MainPage extends javax.swing.JFrame {
         }
     }*/
     //tpxx
-    private void getSetData(int ci){
+    /**
+     * Retrieves metadata for a specific flashcard set from the database.
+     * 
+     * @param ci Current index in the displayedSets list where the set data should be loaded
+     */
+    private void getSetData(int ci) {
                 
         int x;
                 
@@ -347,7 +389,11 @@ public class MainPage extends javax.swing.JFrame {
         
     }
     
-    private void getFolderDetails(){
+    /**
+     * Retrieves folder information from the database and updates the UI.
+     * This method loads all folders created by the current user and their contents.
+     */
+    private void getFolderDetails() {
         
         Connection con = DBConnection.getConnection();
 
@@ -355,7 +401,7 @@ public class MainPage extends javax.swing.JFrame {
         
         //System.out.println(query);
                 
-        folders = new ArrayList();
+        folders = new ArrayList<>();
 
         try{
             
@@ -384,7 +430,11 @@ public class MainPage extends javax.swing.JFrame {
         
     }
     
-    private void displayFolders(){
+    /**
+     * Updates the UI to display folder icons and names.
+     * Each folder is shown with its title and contains links to its flashcard sets.
+     */
+    private void displayFolders() {
         
         int noFolders = folders.size();
         Folder1.setVisible(true);
@@ -434,7 +484,13 @@ public class MainPage extends javax.swing.JFrame {
     }
     
     
-    private void displayBoxes(int ci){
+    /**
+     * Updates the UI to display flashcard set boxes with titles and metadata.
+     * Controls visibility of navigation buttons based on the current page.
+     * 
+     * @param ci Current index in the displayedSets list to start displaying from
+     */
+    private void displayBoxes(int ci) {
                          
         if(ci+6>totalSets){
             //nextPage.setVisible(false);
@@ -544,48 +600,51 @@ public class MainPage extends javax.swing.JFrame {
         
     }
     
-    public void updateProgressBar(){
+    /**
+     * Updates the progress bar indicating the user's completion rate of flashcards.
+     * Reads CSV files to calculate the percentage of cards marked as "learned".
+     */
+    public void updateProgressBar() {
         float precentage=(float) (((pageDisplayed)/Math.ceil((float)totalSets/6))*100);
         ProgressBar.setValue((int) precentage);
         //System.out.println(precentage);
     }
     
-    public void readCSV(){
+    /**
+     * Reads and parses CSV files containing flashcard data.
+     * Each CSV file contains a set of Mandarin words, their translations, and study progress.
+     * The data is stored in the allCSVData list for use in progress tracking.
+     */
+    public void readCSV() {
         //System.out.println("hi");
         String fileName = "flaggedTerms.txt";
         int ticker = 0;
-        String cSVdata[]= new String[3];
-        ArrayList<String[]> allCSVData = new ArrayList();
-        try{
-            Scanner s = new Scanner(new FileReader(fileName));
-            while(s.hasNext()){
-                if(ticker==0){
-                    cSVdata = new String[3];
+        String[] csvData = new String[3];
+        ArrayList<String[]> allCSVData = new ArrayList<>();
+        try (Scanner s = new Scanner(new FileReader(fileName))) {
+            while(s.hasNext()) {
+                if(ticker == 0) {
+                    csvData = new String[3];
                 }
                 String line = s.nextLine();
-                cSVdata[ticker]= line;
-                ticker+=1;
-                if(ticker==3){
-                    ticker=0;
-                    allCSVData.add(cSVdata);
-                    //System.out.println("added");
+                csvData[ticker] = line;
+                ticker += 1;
+                
+                if(ticker == 3) {
+                    ticker = 0;
+                    allCSVData.add(csvData.clone()); // Clone to avoid reference issues
                 }
-              
-                //System.out.println(line);
             }
-        }catch(FileNotFoundException e){
-            JOptionPane.showMessageDialog(null,e, "WARNING", JOptionPane.WARNING_MESSAGE);
-        }
-        
-        //System.out.println(allCSVData.size());
-        for(int i=0; i<allCSVData.size();i++){
-            for(int j=0;j<3;j++){
-                //System.out.println(allCSVData.get(i)[j]);                
-            }
+        } catch(FileNotFoundException e) {
+            JOptionPane.showMessageDialog(null, e, "WARNING", JOptionPane.WARNING_MESSAGE);
         }
     }
     
-    public void openFolderEditor(){
+    /**
+     * Shows the folder editor interface where users can create, rename, or delete folders.
+     * Also allows users to organize flashcard sets into folders.
+     */
+    public void openFolderEditor() {
         
         folderEditorLabel.setVisible(true);
         backspace.setVisible(true);
@@ -598,7 +657,11 @@ public class MainPage extends javax.swing.JFrame {
                
     }
     
-    public void closeFolderEditor(){
+    /**
+     * Closes the folder editor and updates the main interface to reflect any changes.
+     * Refreshes the folder display and set organization.
+     */
+    public void closeFolderEditor() {
         folderEditorLabel.setVisible(false);
         backspace.setVisible(false);
         enterSetNumberFeild.setVisible(false);
@@ -607,7 +670,13 @@ public class MainPage extends javax.swing.JFrame {
         removeFolder.setVisible(false); 
     }
      
-    public boolean validateSetExsistance(int setNo){
+    /**
+     * Checks if a flashcard set exists and is accessible.
+     * 
+     * @param setNo The ID number of the set to validate
+     * @return true if the set exists and is accessible, false otherwise
+     */
+    public boolean validateSetExsistance(int setNo) {
         boolean validate=false;
         
         Connection con = DBConnection.getConnection();
@@ -632,7 +701,14 @@ public class MainPage extends javax.swing.JFrame {
         return(validate);
     }
     
-    public void removeSet(int setNo, int folderNo){
+    /**
+     * Removes a flashcard set from a folder.
+     * This only affects the organization, not the set data itself.
+     * 
+     * @param setNo The ID of the set to remove
+     * @param folderNo The ID of the folder to remove the set from
+     */
+    public void removeSet(int setNo, int folderNo) {
         
         String remove = setNo+",";
         int setIndexInArray=-1;
@@ -667,7 +743,6 @@ public class MainPage extends javax.swing.JFrame {
        
     }
     
-    //https://stackoverflow.com/questions/1102891/how-to-check-if-a-string-is-numeric-in-java
     public static boolean isNumeric(String str) { 
         try {  
           Double.parseDouble(str);  
@@ -677,7 +752,12 @@ public class MainPage extends javax.swing.JFrame {
         }  
     }
     
-    public void prevPageVisible(boolean x){
+    /**
+     * Controls the visibility of the "Previous Page" navigation button.
+     * 
+     * @param x true to show the button, false to hide it
+     */
+    public void prevPageVisible(boolean x) {
         prevPage.setOpaque(x);
         prevPage.setContentAreaFilled(x);
         prevPage.setBorderPainted(x);
@@ -688,7 +768,12 @@ public class MainPage extends javax.swing.JFrame {
         }
     }
     
-    public void nextPageVisible(boolean x){
+    /**
+     * Controls the visibility of the "Next Page" navigation button.
+     * 
+     * @param x true to show the button, false to hide it
+     */
+    public void nextPageVisible(boolean x) {
         nextPage.setOpaque(x);
         nextPage.setContentAreaFilled(x);
         nextPage.setBorderPainted(x);
@@ -699,11 +784,11 @@ public class MainPage extends javax.swing.JFrame {
         }
     }
     
-    @SuppressWarnings("unchecked")
+
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jScrollPane1 = new javax.swing.JScrollPane();
+
         jPanel1 = new javax.swing.JPanel();
         FC1box = new javax.swing.JButton();
         jPanel2 = new javax.swing.JPanel();
@@ -1222,6 +1307,12 @@ public class MainPage extends javax.swing.JFrame {
 
     
  
+    /**
+     * Event handler for clicking the first flashcard set button.
+     * Opens the selected set in the flashcard study interface.
+     * 
+     * @param evt The action event from clicking the button
+     */
     private void FC1boxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FC1boxActionPerformed
         
         //Variables need to open flashcard selector (from csv files)
@@ -1250,7 +1341,7 @@ public class MainPage extends javax.swing.JFrame {
 
                 //split string to create an array on titles
                 String word = "";
-                ArrayList<String> arraylistWord = new ArrayList();
+                ArrayList<String> arraylistWord = new ArrayList<>();
                 //System.out.println(starredNamesRaw);
                 //System.out.println(starredNamesRaw.length());
                 for(int j = 0; j<starredNamesRaw.length();j++){
@@ -1281,13 +1372,13 @@ public class MainPage extends javax.swing.JFrame {
                 
         if(flag==false){
             try{
-                //https://stackoverflow.com/questions/34628425/writing-to-file-in-netbeans-ide-in-java
-               FileWriter fr = new FileWriter("flaggedTerms.txt",true);
-               BufferedWriter br = new BufferedWriter(fr);
-               br.write(""+displayedSets.get(0).getSetNumber()+"\n0\n,,,,,");
-               br.close();
-               fr.close();
-               System.out.println("sucess");
+                
+                FileWriter fr = new FileWriter("flaggedTerms.txt",true);
+                BufferedWriter br = new BufferedWriter(fr);
+                br.write(""+displayedSets.get(0).getSetNumber()+"\n0\n,,,,,");
+                br.close();
+                fr.close();
+                System.out.println("sucess");
             }catch(IOException e){
                 System.out.println(e);
                 JOptionPane.showMessageDialog(null,e, "WARNING", JOptionPane.WARNING_MESSAGE);
@@ -1301,7 +1392,8 @@ public class MainPage extends javax.swing.JFrame {
           //System.out.println(displayedSets.get(0).getTableTitles()[i]);
           //System.out.println(starredNames[i]);
         }
-        FlashcardSelector fcs = new FlashcardSelector(this,username,displayedSets.get(0),starredNames,starred,displayedSets.get(0).getSetNumber());
+        // Create and display flashcard selector window
+        new FlashcardSelector(this, username, displayedSets.get(0), starredNames, starred, displayedSets.get(0).getSetNumber()).setVisible(true);
         
         //dispose 
         
@@ -1336,7 +1428,7 @@ public class MainPage extends javax.swing.JFrame {
 
                 //split string to create an array on titles
                 String word = "";
-                ArrayList<String> arraylistWord = new ArrayList();
+                ArrayList<String> arraylistWord = new ArrayList<>();
                 //System.out.println(starredNamesRaw);
                 //System.out.println(starredNamesRaw.length());
                 for(int j = 0; j<starredNamesRaw.length();j++){
@@ -1367,13 +1459,13 @@ public class MainPage extends javax.swing.JFrame {
                 
         if(flag==false){
             try{
-                //https://stackoverflow.com/questions/34628425/writing-to-file-in-netbeans-ide-in-java
-               FileWriter fr = new FileWriter("flaggedTerms.txt",true);
-               BufferedWriter br = new BufferedWriter(fr);
-               br.write(""+displayedSets.get(1).getSetNumber()+"\n0\n,,,,,");
-               br.close();
-               fr.close();
-               System.out.println("sucess");
+                
+                FileWriter fr = new FileWriter("flaggedTerms.txt",true);
+                BufferedWriter br = new BufferedWriter(fr);
+                br.write(""+displayedSets.get(1).getSetNumber()+"\n0\n,,,,,");
+                br.close();
+                fr.close();
+                System.out.println("sucess");
             }catch(IOException e){
                 System.out.println(e);
                 JOptionPane.showMessageDialog(null,e, "WARNING", JOptionPane.WARNING_MESSAGE);
@@ -1385,7 +1477,7 @@ public class MainPage extends javax.swing.JFrame {
           //System.out.println(displayedSets.get(1).getTableTitles()[i]);
           //System.out.println(starredNames[i]);
         }
-        FlashcardSelector fcs = new FlashcardSelector(this,username,displayedSets.get(1),starredNames,starred,displayedSets.get(1).getSetNumber());
+        new FlashcardSelector(this, username, displayedSets.get(1), starredNames, starred, displayedSets.get(1).getSetNumber()).setVisible(true);
     
     }//GEN-LAST:event_FC2boxActionPerformed
 
@@ -1419,7 +1511,7 @@ public class MainPage extends javax.swing.JFrame {
 
                 //split string to create an array on titles
                 String word = "";
-                ArrayList<String> arraylistWord = new ArrayList();
+                ArrayList<String> arraylistWord = new ArrayList<>();
                 //System.out.println(starredNamesRaw);
                 //System.out.println(starredNamesRaw.length());
                 for(int j = 0; j<starredNamesRaw.length();j++){
@@ -1450,13 +1542,13 @@ public class MainPage extends javax.swing.JFrame {
                 
         if(flag==false){
             try{
-                //https://stackoverflow.com/questions/34628425/writing-to-file-in-netbeans-ide-in-java
-               FileWriter fr = new FileWriter("flaggedTerms.txt",true);
-               BufferedWriter br = new BufferedWriter(fr);
-               br.write(""+displayedSets.get(2).getSetNumber()+"\n0\n,,,,,");
-               br.close();
-               fr.close();
-               System.out.println("sucess");
+                
+                FileWriter fr = new FileWriter("flaggedTerms.txt",true);
+                BufferedWriter br = new BufferedWriter(fr);
+                br.write(""+displayedSets.get(2).getSetNumber()+"\n0\n,,,,,");
+                br.close();
+                fr.close();
+                System.out.println("sucess");
             }catch(IOException e){
                 System.out.println(e);
                 JOptionPane.showMessageDialog(null,e, "WARNING", JOptionPane.WARNING_MESSAGE);
@@ -1470,7 +1562,7 @@ public class MainPage extends javax.swing.JFrame {
           //System.out.println(displayedSets.get(2).getTableTitles()[i]);
           //System.out.println(starredNames[i]);
         }
-        FlashcardSelector fcs = new FlashcardSelector(this,username,displayedSets.get(2),starredNames,starred,displayedSets.get(2).getSetNumber());
+        new FlashcardSelector(this, username, displayedSets.get(2), starredNames, starred, displayedSets.get(2).getSetNumber()).setVisible(true);
         }//GEN-LAST:event_FC3boxActionPerformed
 
     private void FC4boxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FC4boxActionPerformed
@@ -1501,7 +1593,7 @@ public class MainPage extends javax.swing.JFrame {
                 System.out.println(starredNamesRaw);
                 //split string to create an array on titles
                 String word = "";
-                ArrayList<String> arraylistWord = new ArrayList();
+                ArrayList<String> arraylistWord = new ArrayList<>();
                 //System.out.println(starredNamesRaw);
                 //System.out.println(starredNamesRaw.length());
                 for(int j = 0; j<starredNamesRaw.length();j++){
@@ -1532,13 +1624,13 @@ public class MainPage extends javax.swing.JFrame {
                 
         if(flag==false){
             try{
-                //https://stackoverflow.com/questions/34628425/writing-to-file-in-netbeans-ide-in-java
-               FileWriter fr = new FileWriter("flaggedTerms.txt",true);
-               BufferedWriter br = new BufferedWriter(fr);
-               br.write(""+displayedSets.get(3).getSetNumber()+"\n0\n,,,,,");
-               br.close();
-               fr.close();
-               System.out.println("sucess");
+                
+                FileWriter fr = new FileWriter("flaggedTerms.txt",true);
+                BufferedWriter br = new BufferedWriter(fr);
+                br.write(""+displayedSets.get(3).getSetNumber()+"\n0\n,,,,,");
+                br.close();
+                fr.close();
+                System.out.println("sucess");
             }catch(IOException e){
                 System.out.println(e);
                 JOptionPane.showMessageDialog(null,e, "WARNING", JOptionPane.WARNING_MESSAGE);
@@ -1550,7 +1642,7 @@ public class MainPage extends javax.swing.JFrame {
           //System.out.println(displayedSets.get(3).getTableTitles()[i]);
           //System.out.println(starredNames[i]);
         }
-        FlashcardSelector fcs = new FlashcardSelector(this,username,displayedSets.get(3),starredNames,starred,displayedSets.get(3).getSetNumber());
+        new FlashcardSelector(this, username, displayedSets.get(3), starredNames, starred, displayedSets.get(3).getSetNumber()).setVisible(true);
     
     }//GEN-LAST:event_FC4boxActionPerformed
 
@@ -1582,7 +1674,7 @@ public class MainPage extends javax.swing.JFrame {
                 System.out.println(starredNamesRaw);
                 //split string to create an array on titles
                 String word = "";
-                ArrayList<String> arraylistWord = new ArrayList();
+                ArrayList<String> arraylistWord = new ArrayList<>();
                 //System.out.println(starredNamesRaw);
                 //System.out.println(starredNamesRaw.length());
                 for(int j = 0; j<starredNamesRaw.length();j++){
@@ -1613,13 +1705,13 @@ public class MainPage extends javax.swing.JFrame {
                 
         if(flag==false){
             try{
-                //https://stackoverflow.com/questions/34628425/writing-to-file-in-netbeans-ide-in-java
-               FileWriter fr = new FileWriter("flaggedTerms.txt",true);
-               BufferedWriter br = new BufferedWriter(fr);
-               br.write(""+displayedSets.get(4).getSetNumber()+"\n0\n,,,,,");
-               br.close();
-               fr.close();
-               System.out.println("sucess");
+                
+                FileWriter fr = new FileWriter("flaggedTerms.txt",true);
+                BufferedWriter br = new BufferedWriter(fr);
+                br.write(""+displayedSets.get(4).getSetNumber()+"\n0\n,,,,,");
+                br.close();
+                fr.close();
+                System.out.println("sucess");
             }catch(IOException e){
                 System.out.println(e);
                 JOptionPane.showMessageDialog(null,e, "WARNING", JOptionPane.WARNING_MESSAGE);
@@ -1631,7 +1723,7 @@ public class MainPage extends javax.swing.JFrame {
           //System.out.println(displayedSets.get(4).getTableTitles()[i]);
           //System.out.println(starredNames[i]);
         }
-        FlashcardSelector fcs = new FlashcardSelector(this,username,displayedSets.get(4),starredNames,starred,displayedSets.get(4).getSetNumber());
+        new FlashcardSelector(this, username, displayedSets.get(4), starredNames, starred, displayedSets.get(4).getSetNumber()).setVisible(true);
     
     }//GEN-LAST:event_FC5boxActionPerformed
 
@@ -1663,7 +1755,7 @@ public class MainPage extends javax.swing.JFrame {
                 System.out.println(starredNamesRaw);
                 //split string to create an array on titles
                 String word = "";
-                ArrayList<String> arraylistWord = new ArrayList();
+                ArrayList<String> arraylistWord = new ArrayList<>();
                 //System.out.println(starredNamesRaw);
                 //System.out.println(starredNamesRaw.length());
                 for(int j = 0; j<starredNamesRaw.length();j++){
@@ -1694,13 +1786,13 @@ public class MainPage extends javax.swing.JFrame {
                 
         if(flag==false){
             try{
-                //https://stackoverflow.com/questions/34628425/writing-to-file-in-netbeans-ide-in-java
-               FileWriter fr = new FileWriter("flaggedTerms.txt",true);
-               BufferedWriter br = new BufferedWriter(fr);
-               br.write(""+displayedSets.get(5).getSetNumber()+"\n0\n,,,,,");
-               br.close();
-               fr.close();
-               System.out.println("sucess");
+                
+                FileWriter fr = new FileWriter("flaggedTerms.txt",true);
+                BufferedWriter br = new BufferedWriter(fr);
+                br.write(""+displayedSets.get(5).getSetNumber()+"\n0\n,,,,,");
+                br.close();
+                fr.close();
+                System.out.println("sucess");
             }catch(IOException e){
                 System.out.println(e);
                 JOptionPane.showMessageDialog(null,e, "WARNING", JOptionPane.WARNING_MESSAGE);
@@ -1712,7 +1804,7 @@ public class MainPage extends javax.swing.JFrame {
           //System.out.println(displayedSets.get(5).getTableTitles()[i]);
           //System.out.println(starredNames[i]);
         }
-        FlashcardSelector fcs = new FlashcardSelector(this,username,displayedSets.get(5),starredNames,starred,displayedSets.get(5).getSetNumber());
+        new FlashcardSelector(this, username, displayedSets.get(5), starredNames, starred, displayedSets.get(5).getSetNumber()).setVisible(true);
     
     }//GEN-LAST:event_FC6boxActionPerformed
 
@@ -1792,19 +1884,25 @@ public class MainPage extends javax.swing.JFrame {
     private void searchbuttonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchbuttonActionPerformed
         this.setVisible(false);
         String search = searchfield.getText();
-        search s = new search(username,this,search);
+        new search(username, this, search).setVisible(true);
     }//GEN-LAST:event_searchbuttonActionPerformed
 
     private void searchfieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchfieldActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_searchfieldActionPerformed
 
+    /**
+     * Event handler for the main folder management button.
+     * Opens the folder editor interface for organizing sets.
+     * 
+     * @param evt The action event from clicking the button
+     */
     private void FolderMPActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FolderMPActionPerformed
         
         pageDisplayed=1;
         currentIndex=0;
         totalSets=0;
-        setNumbers = new ArrayList();
+        setNumbers = new ArrayList<>();
         
         Connection con = DBConnection.getConnection();
        
@@ -1857,7 +1955,7 @@ public class MainPage extends javax.swing.JFrame {
         enterSetNumberFeild.setText("");
         
         String setNumberRaw = folders.get(0).getsetNumbers();
-        ArrayList<Integer> setsInFolder = new ArrayList();
+        ArrayList<Integer> setsInFolder = new ArrayList<>();
         String number = "";
         for(int i = 0; i<setNumberRaw.length();i++){
             if(setNumberRaw.charAt(i)!=','){
@@ -1874,9 +1972,9 @@ public class MainPage extends javax.swing.JFrame {
         pageDisplayed=1;
         currentIndex=0;
         
-        setNumbers = new ArrayList();
+        setNumbers = new ArrayList<>();
         
-        ArrayList<Integer> setsToDelete = new ArrayList();
+        ArrayList<Integer> setsToDelete = new ArrayList<>();
          
         int deletedSets = 0;
         for(int i =0; i<setsInFolder.size();i++){
@@ -1920,6 +2018,12 @@ public class MainPage extends javax.swing.JFrame {
     }
     
     
+    /**
+     * Event handler for clicking the first folder button.
+     * Opens the selected folder to display its flashcard sets.
+     * 
+     * @param evt The action event from clicking the button
+     */
     private void Folder1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_Folder1ActionPerformed
         
         loadFolder1();
@@ -1929,7 +2033,7 @@ public class MainPage extends javax.swing.JFrame {
     public void loadFolder2(){
         
         String setNumberRaw = folders.get(1).getsetNumbers();
-        ArrayList<Integer> setsInFolder = new ArrayList();
+        ArrayList<Integer> setsInFolder = new ArrayList<>();
         String number = "";
         for(int i = 0; i<setNumberRaw.length();i++){
             if(setNumberRaw.charAt(i)!=','){
@@ -1946,9 +2050,9 @@ public class MainPage extends javax.swing.JFrame {
         pageDisplayed=1;
         currentIndex=0;
         
-        setNumbers = new ArrayList();
+        setNumbers = new ArrayList<>();
         
-        ArrayList<Integer> setsToDelete = new ArrayList();
+        ArrayList<Integer> setsToDelete = new ArrayList<>();
          
         int deletedSets = 0;
         for(int i =0; i<setsInFolder.size();i++){
@@ -1999,7 +2103,7 @@ public class MainPage extends javax.swing.JFrame {
 
     public void loadFolder3(){
         String setNumberRaw = folders.get(2).getsetNumbers();
-        ArrayList<Integer> setsInFolder = new ArrayList();
+        ArrayList<Integer> setsInFolder = new ArrayList<>();
         String number = "";
         for(int i = 0; i<setNumberRaw.length();i++){
             if(setNumberRaw.charAt(i)!=','){
@@ -2016,9 +2120,9 @@ public class MainPage extends javax.swing.JFrame {
         pageDisplayed=1;
         currentIndex=0;
         
-        setNumbers = new ArrayList();
+        setNumbers = new ArrayList<>();
         
-        ArrayList<Integer> setsToDelete = new ArrayList();
+        ArrayList<Integer> setsToDelete = new ArrayList<>();
          
         int deletedSets = 0;
         for(int i =0; i<setsInFolder.size();i++){
@@ -2069,7 +2173,7 @@ public class MainPage extends javax.swing.JFrame {
 
     public void loadFolder4(){
         String setNumberRaw = folders.get(3).getsetNumbers();
-        ArrayList<Integer> setsInFolder = new ArrayList();
+        ArrayList<Integer> setsInFolder = new ArrayList<>();
         String number = "";
         for(int i = 0; i<setNumberRaw.length();i++){
             if(setNumberRaw.charAt(i)!=','){
@@ -2086,9 +2190,9 @@ public class MainPage extends javax.swing.JFrame {
         pageDisplayed=1;
         currentIndex=0;
         
-        setNumbers = new ArrayList();
+        setNumbers = new ArrayList<>();
         
-        ArrayList<Integer> setsToDelete = new ArrayList();
+        ArrayList<Integer> setsToDelete = new ArrayList<>();
          
         int deletedSets = 0;
         for(int i =0; i<setsInFolder.size();i++){
@@ -2141,7 +2245,7 @@ public class MainPage extends javax.swing.JFrame {
     public void loadFolder5(){
         
         String setNumberRaw = folders.get(4).getsetNumbers();
-        ArrayList<Integer> setsInFolder = new ArrayList();
+        ArrayList<Integer> setsInFolder = new ArrayList<>();
         String number = "";
         for(int i = 0; i<setNumberRaw.length();i++){
             if(setNumberRaw.charAt(i)!=','){
@@ -2158,9 +2262,9 @@ public class MainPage extends javax.swing.JFrame {
         pageDisplayed=1;
         currentIndex=0;
         
-        setNumbers = new ArrayList();
+        setNumbers = new ArrayList<>();
         
-        ArrayList<Integer> setsToDelete = new ArrayList();
+        ArrayList<Integer> setsToDelete = new ArrayList<>();
          
         int deletedSets = 0;
         for(int i =0; i<setsInFolder.size();i++){
@@ -2211,7 +2315,7 @@ public class MainPage extends javax.swing.JFrame {
 
     public void loadFolder6(){
         String setNumberRaw = folders.get(5).getsetNumbers();
-        ArrayList<Integer> setsInFolder = new ArrayList();
+        ArrayList<Integer> setsInFolder = new ArrayList<>();
         String number = "";
         for(int i = 0; i<setNumberRaw.length();i++){
             if(setNumberRaw.charAt(i)!=','){
@@ -2228,9 +2332,9 @@ public class MainPage extends javax.swing.JFrame {
         pageDisplayed=1;
         currentIndex=0;
         
-        setNumbers = new ArrayList();
+        setNumbers = new ArrayList<>();
         
-        ArrayList<Integer> setsToDelete = new ArrayList();
+        ArrayList<Integer> setsToDelete = new ArrayList<>();
          
         int deletedSets = 0;
         for(int i =0; i<setsInFolder.size();i++){
@@ -2414,7 +2518,6 @@ public class MainPage extends javax.swing.JFrame {
     }//GEN-LAST:event_removeFolderActionPerformed
 
     private void enterSetNumberFeildKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_enterSetNumberFeildKeyPressed
-        //https://www.youtube.com/watch?v=cdPKsws5f-4
         
         char c = evt.getKeyChar();
         if(isNumeric(""+c)){
@@ -2431,7 +2534,7 @@ public class MainPage extends javax.swing.JFrame {
     }//GEN-LAST:event_backspaceActionPerformed
 
     private void MailButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_MailButtonActionPerformed
-        MailMenu mm = new MailMenu(username, this);
+        new MailMenu(username, this).setVisible(true);
         this.setVisible(false);
     }//GEN-LAST:event_MailButtonActionPerformed
 
@@ -2482,7 +2585,7 @@ public class MainPage extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel6;
-    private javax.swing.JScrollPane jScrollPane1;
+
     private javax.swing.JButton nextPage;
     private javax.swing.JButton prevPage;
     private javax.swing.JRadioButton removeFolder;

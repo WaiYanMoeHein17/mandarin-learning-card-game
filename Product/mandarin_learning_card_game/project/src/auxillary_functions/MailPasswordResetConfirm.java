@@ -1,7 +1,6 @@
 
 package auxillary_functions;
 
-//Imports
 import flashcards.FlashcardSelector;
 import main_page.SetSelector;
 import projects.DBConnection;
@@ -13,226 +12,217 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.SwingConstants;
 
-
-
+/**
+ * MailPasswordResetConfirm is a specialized message viewer for handling password reset
+ * and set verification requests. This class provides a GUI interface for:
+ * 
+ * 1. Password Reset Requests:
+ *    - Viewing password reset request details
+ *    - Accepting or declining password changes
+ *    - Managing temporary password storage
+ * 
+ * 2. Set Verification Requests:
+ *    - Reviewing sets pending verification
+ *    - Approving or rejecting set verification
+ *    - Viewing set contents before verification
+ * 
+ * The class includes security measures for password management and maintains
+ * message state in the database.
+ */
 public class MailPasswordResetConfirm extends javax.swing.JFrame {
     
-    //initiase variables
-    //variables needed to navigate to other frames
+    /** Username of the currently logged-in user */
     private String currentUser;
-    private MailMenu prevFrame; 
-
-    //set specific vairables
-    private int mailIndex;
-    private String sender;
-    private String topic;
-    private int viewTimes;
-    private boolean pinned;
-    private String dateSent;
-    private String message;
     
+    /** Reference to the previous MailMenu frame for navigation */
+    private MailMenu prevFrame;
 
-    //constructor
-    //take in the parameters from a single mail selector object
-    public MailPasswordResetConfirm(String cu, MailMenu p, int mi,String s, String t, int vt, boolean pinned, String dateSent, String message) {
+    /** Unique identifier for this message in the database */
+    private int mailIndex;
+    
+    /** Username of the message sender */
+    private String sender;
+    
+    /** Message topic/subject - used to determine message type */
+    private String topic;
+    
+    /** Number of times the message has been viewed */
+    private int viewTimes;
+    
+    /** Flag indicating if the message is pinned */
+    private boolean pinned;
+    
+    /** Date when the message was sent */
+    private String dateSent;
+    
+    /** Content of the message */
+    private String message;
+
+    /**
+     * Creates a new message viewer for password reset or set verification requests.
+     * Initializes the GUI and populates it with the message details.
+     *
+     * @param cu Current user's username
+     * @param p Reference to previous MailMenu frame
+     * @param mi Message index in database
+     * @param s Sender's username
+     * @param t Message topic
+     * @param vt View count
+     * @param pinned Whether message is pinned
+     * @param dateSent Date message was sent
+     * @param message Message content
+     */
+    public MailPasswordResetConfirm(String cu, MailMenu p, int mi, String s, String t, 
+            int vt, boolean pinned, String dateSent, String message) {
         
-        //create frame
         initComponents();
-        
-        this.setVisible(true);
         this.setLocationRelativeTo(null);
         
-        //store the parameters from the constructor
-        currentUser=cu;
-        prevFrame=p; 
-        mailIndex=mi;
-        sender=s;
-        topic=t;
-        viewTimes=vt;
-        this.pinned=pinned;
-        this.dateSent=dateSent;
-        this.message=message;
+        // Initialize message properties
+        this.currentUser = cu;
+        this.prevFrame = p;
+        this.mailIndex = mi;
+        this.sender = s;
+        this.topic = t;
+        this.viewTimes = vt;
+        this.pinned = pinned;
+        this.dateSent = dateSent;
+        this.message = message;
         
+        // Set up UI components
         welcomeText1.setText(topic);
         enterRecipient.setText(sender);
         dateSentDisplay.setText(dateSent);
         messageInput.setText(message);
-                
-        if(topic.equals("Set Verification Required: ActionRequired")){
+        
+        // Configure UI based on message type
+        if (topic.equals("Set Verification Required: ActionRequired")) {
             AcceptPasswordChange.setText("Verify Set");
-        }else{
+        } else {
             ViewSet.setVisible(false);
         }
         
-        //System.out.println(pinned);
-        
-
+        this.setVisible(true);
     }
     
     //method to delete this message
-    private void delete(){
-        
-        //communication with database
-        try{
-
+    /**
+     * Deletes the current message from the database.
+     * This is called when a message is no longer needed or has been processed.
+     */
+    private void delete() {
+        try {
             Connection con = DBConnection.getConnection();
+            String query = "DELETE FROM `mail` WHERE `MailIndex` = ?";
             
-            //create a query that deletes this message from database
-            String query = "DELETE FROM `mail` WHERE `MailIndex`='" + mailIndex + "'";
-
-            ///excute this query
-            Statement statement = con.createStatement();
-            statement.executeUpdate(query);
-            //JOptionPane.showMessageDialog(null,"Mail Sent", "SUCCESS", JOptionPane.WARNING_MESSAGE);       
-
-        //if not possible
-        }catch(Exception e){
+            PreparedStatement ps = con.prepareStatement(query);
+            ps.setInt(1, mailIndex);
+            ps.executeUpdate();
+            ps.close();
             
-            //print error code
-            JOptionPane.showMessageDialog(null,"The current message could not be deleted from the database.\n Try again view help by clicking the help button or contact an admin if this issue persists.\n\n Please note down the error code in case an admin requires it. \n Error Code: " + e, "WARNING", JOptionPane.WARNING_MESSAGE);
-            System.out.println(e);
+        } catch (Exception e) {
+            String errorMsg = "The current message could not be deleted from the database.\n" +
+                            "Try again, view help, or contact an admin if this issue persists.\n\n" +
+                            "Error Code: " + e.getMessage();
+            JOptionPane.showMessageDialog(null, errorMsg, "WARNING", JOptionPane.WARNING_MESSAGE);
         }
         
         this.dispose();
-        //update the inbox on previous page to account for this sets's changes
         prevFrame.getAndMakeTable();
-        
     }
     
-    //method to update the current message in the database
-    
-    private void updateInfo(){
-        
-        //communicate with database
-        try{
-            
+    /**
+     * Updates the message's view count and pinned status in the database.
+     * Called when message properties have changed.
+     */
+    private void updateInfo() {
+        try {
             Connection con = DBConnection.getConnection();
-           
-            //find out if the mail has been pinned
-            int pinnedInt;
+            String query = "UPDATE `mail` SET `ViewTimes` = ?, `Pinned` = ? WHERE `MailIndex` = ?";
             
-            if(pinned){
-                pinnedInt=1;
-            }else{
-                pinnedInt=0;
-            }
-
-            //create a query to update the saved viewTimes and pinned boolean in the databse
-            String query = "UPDATE `mail` SET `ViewTimes`='" + viewTimes + "',`Pinned`='" + pinnedInt + "' WHERE `MailIndex`='" + mailIndex + "'";
+            PreparedStatement ps = con.prepareStatement(query);
+            ps.setInt(1, viewTimes);
+            ps.setInt(2, pinned ? 1 : 0);
+            ps.setInt(3, mailIndex);
             
-            //execute query
-            Statement statement = con.createStatement();
-            statement.executeUpdate(query);
-            //JOptionPane.showMessageDialog(null,"Mail Sent", "SUCCESS", JOptionPane.WARNING_MESSAGE);       
-
-        //if error encountered 
-        }catch(Exception e){
+            ps.executeUpdate();
+            ps.close();
             
-            //print error
-            JOptionPane.showMessageDialog(null,e, "WARNING", JOptionPane.WARNING_MESSAGE);
-            System.out.println(e);
+        } catch (Exception e) {
+            String errorMsg = "Failed to update message properties.\n" +
+                            "Error: " + e.getMessage();
+            JOptionPane.showMessageDialog(null, errorMsg, "WARNING", JOptionPane.WARNING_MESSAGE);
         }
         
         delete();
-        
-        //update the inbox on previous page to account for this sets's changes
         prevFrame.getAndMakeTable();
     }
 
     //method that resets password if boolean x is true, else reverting it to the old password
-    private void updatePassword(boolean x){
+    /**
+     * Updates the user's password based on a reset request.
+     * The password field in the database contains both the old and new passwords,
+     * separated by "///". This method either applies the new password or reverts
+     * to the old one.
+     *
+     * @param applyNewPassword true to apply the new password, false to revert to old password
+     */
+    private void updatePassword(boolean applyNewPassword) {
+        String password = null;
+        String newPassword = null;
         
-            //initialse the current password and the new password as strings with no value
-            String password = null;
-            String newPassword = null;
-        
-            //create a connection to the database
+        try {
+            // First, retrieve the current password field which contains both passwords
             Connection con = DBConnection.getConnection();
-
-            //create SQL query and save it to a string
-            String query = "SELECT `Password` FROM users WHERE Username=?";
-
-            //try do
-            try{
-                //create a statent which the SQL query is passed into
-                PreparedStatement ps = con.prepareStatement(query);
-
-                //pass the sender as tje argument for the first parameter for the SQL statement
-                ps.setString(1,sender);
-
-                //save returned rows to result set 
-                ResultSet rs = ps.executeQuery();
-
-                //as the sender is a unique user, therefore we need to ensure the password is present
-                if(rs.next()){
-                    
-                    //if there are any result rows get the password feild and save it to a variable  
-                    password = rs.getString("password");
-                    
-                }
-
-            // if an error is encountered
-            }catch(Exception e){
-                
-                //output error to users
-                JOptionPane.showMessageDialog(null,"The current password could not be received from the database. Try again view help by clicking the help button or contact an admin if this issue persists. Please note down the error code in case an admin requires it. \n Error Code: " + e, "WARNING", JOptionPane.WARNING_MESSAGE);
-                //print to output for testing/debugging purposes
-                System.out.println(e);
+            String query = "SELECT `Password` FROM users WHERE Username = ?";
+            
+            PreparedStatement ps = con.prepareStatement(query);
+            ps.setString(1, sender);
+            ResultSet rs = ps.executeQuery();
+            
+            if (rs.next()) {
+                password = rs.getString("password");
             }
             
-                //System.out.println("Password:" + password);
+            rs.close();
+            ps.close();
             
-            //if password is found and reset parameter for this method is true
-            if(x==true&&password!=null){
+            if (password != null) {
+                // Extract either the new or old password based on the parameter
+                int delimiterIndex = password.indexOf("///");
+                if (delimiterIndex != -1) {
+                    if (applyNewPassword) {
+                        newPassword = password.substring(delimiterIndex + 3);
+                    } else {
+                        newPassword = password.substring(0, delimiterIndex);
+                    }
+                }
                 
-                    //System.out.println("reset=true");
-                // set the new password to the string after the delimite "///"
-                newPassword = password.substring(password.indexOf("///")+3);
-                    //System.out.println("new password = " + newPassword);
-                
-            }else{
-                //if a passowrd is fond and the reset parameter for this method is false
-                if(password!=null){
+                // Update the password if we successfully extracted it
+                if (newPassword != null) {
+                    String updateQuery = "UPDATE `users` SET `Password` = ? WHERE `Username` = ?";
+                    PreparedStatement updatePs = con.prepareStatement(updateQuery);
+                    updatePs.setString(1, newPassword);
+                    updatePs.setString(2, sender);
+                    updatePs.executeUpdate();
+                    updatePs.close();
                     
-                        //System.out.println("reset=false");
-                        //System.out.println(password.indexOf("///"));
-                    //set new password to the string before the delimiter "///"
-                    newPassword = password.substring(0,password.indexOf("///"));
-                        //System.out.println("new password = " + newPassword);
+                    JOptionPane.showMessageDialog(null, 
+                        "Password has been successfully updated", 
+                        "Success", 
+                        JOptionPane.INFORMATION_MESSAGE);
+                    
+                    viewTimes = 0;
+                    this.dispose();
                 }
             }
-        
-        //Create a new SQL query for setting the password feild for the requesting user to the new password string
-        String query2 = "UPDATE `users` SET `Password`='"+newPassword+"' WHERE `Username`= '" + sender +"'";
-
-        //if the new password is not null
-        if(newPassword!=null){
             
-            //try to
-            try{
-                
-                //create a new statement which will be executed to the database through connection con
-                Statement statement = con.createStatement();
-                //execute this query
-                statement.executeUpdate(query2);
-                //Display success message to the user
-                JOptionPane.showMessageDialog(null,"Password has been successfully updated", "Success", JOptionPane.WARNING_MESSAGE);
-
-                //set view times of this message to zero, so the message is deleted from the mail table in the database
-                viewTimes=0;
-                //return to the previous inbox frame 
-                this.dispose();
-                
-            // if an error is encountered
-            }catch(Exception e){
-                //display error message to user
-                JOptionPane.showMessageDialog(null,"The password could  be updated in the database. Try again, view help by clicking the help button or contact an admin if this issue persists. Please note down the error code in case an admin requires it. \n Error Code: " + e, "WARNING", JOptionPane.WARNING_MESSAGE);
-                //print error message to output for debugging/testing
-                System.out.println(e);
-            }
-            
-        }else{
-            JOptionPane.showMessageDialog(null,"The password could not be reset", "Error", JOptionPane.WARNING_MESSAGE);
+        } catch (Exception e) {
+            String errorMsg = "Failed to update password.\n" +
+                            "Please try again or contact an administrator.\n" +
+                            "Error: " + e.getMessage();
+            JOptionPane.showMessageDialog(null, errorMsg, 
+                "Warning", JOptionPane.WARNING_MESSAGE);
         }
         
         delete();
@@ -571,80 +561,92 @@ public class MailPasswordResetConfirm extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jButton1ActionPerformed
 
-    private void ViewSetActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ViewSetActionPerformed
-        
-        Connection con = DBConnection.getConnection();
-        
-        String query = "SELECT `Set number`, `Set Creator`, `Verified`, `accessType`, `Password`, `TableTitles`, `SetData`, `Set Name`, `SetNotes`, `SetTopic`, `DateCreated`, `DateUpdated` FROM `setdata` WHERE `Set number`=?";
-
-        try{
-
+    /**
+     * Opens the flashcard set viewer for set verification requests.
+     * Extracts the set number from the message content and loads the set details.
+     */
+    private void ViewSetActionPerformed(java.awt.event.ActionEvent evt) {
+        try {
+            Connection con = DBConnection.getConnection();
+            String query = "SELECT * FROM `setdata` WHERE `Set number` = ?";
+            
+            // Extract set number from message content (format: [setNumber])
+            int setNumber = Integer.parseInt(
+                message.substring(message.indexOf("[") + 1, message.indexOf("]"))
+            );
+            
             PreparedStatement ps = con.prepareStatement(query);
-
-            //System.out.println("i" + setNumbers.get(ci+i));
-
-            ps.setInt(1,Integer.parseInt(message.substring(message.indexOf("[")+1,message.indexOf("]"))));
-
-
+            ps.setInt(1, setNumber);
             ResultSet rs = ps.executeQuery();
-
-
-            while(rs.next()){
-                int setNumber = rs.getInt("Set number");
-
-                String setCreator = rs.getString("Set Creator");
-                boolean Verified = rs.getBoolean("Verified");
-                String accessType = rs.getString("accessType");
-                String password = rs.getString("Password");
+            
+            if (rs.next()) {
+                // Parse table titles from comma-separated string
                 String tableTitlesString = rs.getString("TableTitles");
-
-                int numColumns=0;
-                for(int j = 0; j<tableTitlesString.length();j++){
-                    if(tableTitlesString.charAt(j)==','){
-                        numColumns=numColumns+1;
-                    }
-                }
-
-                String tableTitles[] = new String[numColumns];
-                String tempword ="";
-                int wordsInserted=0;
-                for(int j = 0; j<tableTitlesString.length();j++){                    
-                    if(tableTitlesString.charAt(j)!=','){
-                       tempword=tempword+tableTitlesString.charAt(j);
-                    }else{
-                       tableTitles[wordsInserted]=tempword;
-                       wordsInserted+=1;
-                       tempword ="";
-                    }
-                }
-
-
-                String setData = rs.getString("setData");
-                String setName = rs.getString("Set Name");
-                String setNotes = rs.getString("setNotes");
-                String setTopics = rs.getString("SetTopic");
-                String dateCreated = rs.getString("DateCreated");
-                String dateUpdated = rs.getString("DateUpdated");
-                int setNo = rs.getInt("Set number");
-
-
-                SetSelector ss = new SetSelector(setNumber,setCreator,Verified,accessType,password,tableTitles,setData,setName,setNotes,setTopics,dateCreated,dateUpdated);
-
-                String starredNames[] = new String[] {"", "", "", "", "" };;
-
-                String starred = "0";
-
-                FlashcardSelector fcs = new FlashcardSelector(prevFrame.getPrevPage(),"admin",ss,starredNames,starred,setNo);
-
-            }                                           
-
-        }catch(Exception e){
-            JOptionPane.showMessageDialog(null,e, "WARNING", JOptionPane.WARNING_MESSAGE);
-            System.out.println(e);
+                String[] tableTitles = parseTableTitles(tableTitlesString);
+                
+                // Create set selector with database results
+                SetSelector ss = new SetSelector(
+                    rs.getInt("Set number"),
+                    rs.getString("Set Creator"),
+                    rs.getBoolean("Verified"),
+                    rs.getString("accessType"),
+                    rs.getString("Password"),
+                    tableTitles,
+                    rs.getString("setData"),
+                    rs.getString("Set Name"),
+                    rs.getString("setNotes"),
+                    rs.getString("SetTopic"),
+                    rs.getString("DateCreated"),
+                    rs.getString("DateUpdated")
+                );
+                
+                // Open flashcard viewer with empty starred items
+                String[] starredNames = new String[] {"", "", "", "", ""};
+                new FlashcardSelector(
+                    prevFrame.getPrevPage(),
+                    "admin",
+                    ss,
+                    starredNames,
+                    "0",
+                    setNumber
+                );
+            }
+            
+            rs.close();
+            ps.close();
+            
+        } catch (Exception e) {
+            String errorMsg = "Failed to load set details.\n" +
+                            "Error: " + e.getMessage();
+            JOptionPane.showMessageDialog(null, errorMsg, 
+                "Warning", JOptionPane.WARNING_MESSAGE);
         }
-
-    }//GEN-LAST:event_ViewSetActionPerformed
-
+    }
+    
+    /**
+     * Helper method to parse comma-separated table titles into an array.
+     */
+    private String[] parseTableTitles(String titlesString) {
+        int numColumns = 0;
+        for (char c : titlesString.toCharArray()) {
+            if (c == ',') numColumns++;
+        }
+        
+        String[] titles = new String[numColumns];
+        StringBuilder tempWord = new StringBuilder();
+        int wordsInserted = 0;
+        
+        for (char c : titlesString.toCharArray()) {
+            if (c != ',') {
+                tempWord.append(c);
+            } else {
+                titles[wordsInserted++] = tempWord.toString();
+                tempWord.setLength(0);
+            }
+        }
+        
+        return titles;
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton AcceptPasswordChange;

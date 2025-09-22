@@ -1,16 +1,36 @@
-/*
-    What this class does
-    recieves a string passed in from the menu (which is recieved from the database
-    this is then decoded into according groups (definitions terms etc)
-    the user selects their settings
-    Each row is then converted to a Card
-
-
-NOTE wordsNumber == NO. of rows
-     NumColumns == NO. of columns
-*/
-
 package flashcards;
+
+/**
+ * The FlashcardSelector class provides the interface for configuring and initializing
+ * flashcard study sessions in the Mandarin learning game. It processes raw flashcard data
+ * from the database and allows users to configure how each field should be treated
+ * (as terms, definitions, or notes).
+ *
+ * Key features:
+ * - Decodes and displays flashcard data in a table view
+ * - Allows selection of which columns represent terms, definitions, and notes
+ * - Supports flagging/starring specific terms for review
+ * - Provides shuffling capability for randomized study
+ * - Handles access control for private/shared flashcard sets
+ * - Manages navigation between study and creation modes
+ *
+ * Data Structure:
+ * - Rows represent individual flashcards
+ * - Columns represent different fields (terms, translations, notes)
+ * - Maximum 5 fields per card, configurable as terms/definitions/notes
+ * - Maintains starred/flagged status per field
+ *
+ * UI Components:
+ * - Table view showing all flashcard data
+ * - Radio buttons for term/definition/note selection
+ * - Flag selectors for marking important terms
+ * - Controls for shuffling and starting study session
+ * - Access control for editing private sets
+ *
+ * Note on variables:
+ * - wordNumber: Number of rows/cards in the set
+ * - numColumns: Number of fields per card (max 5)
+ */
 import auxillary_functions.search;
 import main_page.MainPage;
 import main_page.SetSelector;
@@ -18,14 +38,9 @@ import creator.createSet;
 import projects.fileReplacer;
 import java.awt.Color;
 import java.awt.Component;
-import java.time.LocalDate;
 import java.util.*;
-import javax.swing.JFrame;
 import javax.swing.table.DefaultTableModel;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
@@ -34,57 +49,106 @@ import javax.swing.table.DefaultTableCellRenderer;
 
 public class FlashcardSelector extends javax.swing.JFrame {
 
-    private int setNo;
-    
-    //private Object prevFrame
+    // Navigation and parent frame references
+    /** Reference to the main page that opened this selector */
     private MainPage prevFrame;
+    /** Reference to the search page that opened this selector */
     private search prevSearchFrame;
+    /** Flag indicating whether this was opened from search (true) or main page (false) */
     private boolean search = false;
     
-    // initialised variables
-    private String dataInput;
-    private int numColumns;
-        //ArrayList<String> columns[] = new ArrayList<String>[numColumns];
-    private int columnNumber = 0;
-    private int wordNumber=0;
-        //private ArrayList[][] terms;
-        //ArrayList<ArrayList<String>> terms2 = new ArrayList<ArrayList<String>>();
-    private ArrayList<ArrayList<String>> terms2 = new ArrayList<>();
-    private char definitions [] = {'f','f','f','f','f'};
-    private char terms [] = {'f','f','f','f','f'};
-    private char notes [] = {'f','f','f','f','f'};
-    private char filteredStarred[] = {'f','f','f','f','f'};
+    // Set metadata
+    /** Unique identifier for this flashcard set */
+    private int setNo;
+    /** Name/title of the flashcard set */
     private String setName;
+    /** Username of the set creator */
     private String setCreator;
-    private String setNotes;
-    private String notesText="";
-    private int numStarred;
+    /** Topic/category of the flashcard set */
     private String topic;
-    //private LocalDate dateCreated;
-    //private LocalDate dateUpdated;
+    /** Creation date of the set */
     private String dateCreated;
+    /** Last modification date of the set */
     private String dateUpdated;
-    private char[][] starred;
-    private char[] tempStarred;
-    private String[] starredName;
-    private int numberSelected=0;
-    private String csvStarredStore="0";
-    private ArrayList<Integer> cardNo = new ArrayList<Integer>();
-    private ArrayList<ArrayList<String>> terms2shuffled = new ArrayList<>();
-    private ArrayList<Integer> cardNoShuffled = new ArrayList<Integer>();
-    private boolean shuffled=false;
-    private String[] tableTitles;    
+    /** Description or additional notes about the set */
+    private String setNotes;
+    /** Formatted notes text for display */
+    private String notesText = "";
+    
+    // Access control
+    /** Current logged-in username */
     private String currentUser;
-    private long[] displayStarred;
-    private boolean validated;
+    /** Access level for this set (public/private) */
     private String access;
+    /** Password for protected sets */
     private String password;
+    /** Whether user access has been validated */
+    private boolean validated;
+
+    // Card data structure
+    /** Raw input data string from database */
+    private String dataInput;
+    /** Number of fields per card (1-5) */
+    private int numColumns;
+    /** Current column being processed */
+    private int columnNumber = 0;
+    /** Total number of cards in the set */
+    private int wordNumber = 0;
+    /** List of all card data, each inner list represents one card's fields */
+    private ArrayList<ArrayList<String>> terms2 = new ArrayList<>();
+    /** Column titles for the table view */
+    private String[] tableTitles;
     
-        /**
-     * Creates new form FlashcardSelector
+    // Field type markers
+    /** Marks which fields are definitions ('t' for true) */
+    private char definitions[] = {'f','f','f','f','f'};
+    /** Marks which fields are terms ('t' for true) */
+    private char terms[] = {'f','f','f','f','f'};
+    /** Marks which fields are notes ('t' for true) */
+    private char notes[] = {'f','f','f','f','f'};
+    
+    // Starring/flagging system
+    /** Number of terms that can be starred */
+    private int numStarred;
+    /** Matrix of starred status for each field */
+    private char[][] starred;
+    /** Temporary storage for starred status */
+    private char[] tempStarred;
+    /** Names/labels for starred term categories */
+    private String[] starredName;
+    /** CSV string storing starred status */
+    private String csvStarredStore = "0";
+    /** Display markers for starred terms */
+    private long[] displayStarred;
+    /** Filtered view of starred terms */
+    private char filteredStarred[] = {'f','f','f','f','f'};
+    
+    // Shuffling support
+    /** Original card order before shuffling */
+    private ArrayList<Integer> cardNo = new ArrayList<Integer>();
+    /** Card data in shuffled order */
+    private ArrayList<ArrayList<String>> terms2shuffled = new ArrayList<>();
+    /** Card numbers in shuffled order */
+    private ArrayList<Integer> cardNoShuffled = new ArrayList<Integer>();
+    /** Whether cards are currently shuffled */
+    private boolean shuffled = false;
+    
+    /** Number of terms currently selected */
+    private int numberSelected = 0;
+    
+    /**
+     * Creates a new FlashcardSelector window opened from the main page.
+     * This constructor initializes the selector with a flashcard set's data
+     * and configures access permissions based on the current user.
+     *
+     * @param prevFrame The MainPage window that opened this selector
+     * @param currentUser Username of the currently logged in user
+     * @param ss The SetSelector containing the flashcard set's metadata
+     * @param starredNames Array of labels for starred term categories
+     * @param starredInput String encoding which terms are starred
+     * @param setNum Unique identifier for this flashcard set
      */
-    
-    public FlashcardSelector(MainPage prevFrame, String currentUser,SetSelector ss,String[] starredNames, String starredInput,int setNum) {
+    public FlashcardSelector(MainPage prevFrame, String currentUser, SetSelector ss, String[] starredNames, String starredInput, int setNum) {
         
         initComponents();
         this.setLocationRelativeTo(null);   
@@ -138,7 +202,18 @@ public class FlashcardSelector extends javax.swing.JFrame {
         }
     }
     
-    public FlashcardSelector(search prevFrame, String currentUser,SetSelector ss,String[] starredNames, String starredInput ) {
+    /**
+     * Creates a new FlashcardSelector window opened from the search page.
+     * This constructor initializes the selector with found flashcard data
+     * and configures access permissions based on the current user.
+     *
+     * @param prevFrame The search window that opened this selector
+     * @param currentUser Username of the currently logged in user
+     * @param ss The SetSelector containing the flashcard set's metadata
+     * @param starredNames Array of labels for starred term categories
+     * @param starredInput String encoding which terms are starred
+     */
+    public FlashcardSelector(search prevFrame, String currentUser, SetSelector ss, String[] starredNames, String starredInput) {
         
         initComponents();
         this.setLocationRelativeTo(null);   
@@ -189,8 +264,17 @@ public class FlashcardSelector extends javax.swing.JFrame {
         }
     }
     
-    //similar to constructor
-    public void EnterData(String s,String[] x){
+    /**
+     * Processes raw flashcard data received from the database.
+     * This method decodes a specially formatted string containing all flashcard data
+     * and initializes the internal data structures. The input string format is:
+     * - First character: number of fields per card (1-5)
+     * - Remaining characters: concatenated card data fields
+     * 
+     * @param s The encoded flashcard data string from database
+     * @param x Array of column titles for the table view
+     */
+    public void EnterData(String s, String[] x) {
         settableTitles(x);
         columnNumber=0;    
         int pointer=0;
@@ -208,7 +292,7 @@ public class FlashcardSelector extends javax.swing.JFrame {
         
         //breaks up data into words     
         while(pointer<dataInput.length()){
-            ArrayList<String> temp = new ArrayList();
+            ArrayList<String> temp = new ArrayList<>();
             wordNumber=0;
             //while a new row is not needed...
             while((dataInput.charAt(pointer))!='/'){
@@ -386,10 +470,20 @@ public class FlashcardSelector extends javax.swing.JFrame {
     }
 
 
-    public DoublyLinkedList createDLL(){
-        
-        boolean containD=false;
-        boolean containT=false;
+    /**
+     * Creates a DoublyLinkedList containing Card objects based on current settings.
+     * This method:
+     * 1. Validates that there are both terms and definitions selected
+     * 2. Creates Card objects from each row of data
+     * 3. Links cards together in a doubly-linked list
+     * 4. Applies any shuffling if enabled
+     * 
+     * @return A new DoublyLinkedList containing all cards, or null if validation fails
+     */
+    public DoublyLinkedList createDLL() {
+        // Check if we have both terms and definitions selected
+        boolean containD = false;
+        boolean containT = false;
         for(int i = 0; i<numColumns;i++){
             if(terms[i]=='t'){
                 containT=true;
@@ -491,32 +585,27 @@ public class FlashcardSelector extends javax.swing.JFrame {
         return(null);
     }
 
-    //creates the table for UI
-    public void updateTable(){
-        
-        DefaultTableModel model = (DefaultTableModel)this.TableOfCards.getModel();
-        //model.setRowCount(0);
+    /**
+     * Updates the table view with current flashcard data.
+     * This method:
+     * 1. Creates a data matrix from the current card set
+     * 2. Sets up column headers with appropriate titles
+     * 3. Configures column widths for optimal display
+     * 4. Highlights starred terms with special formatting
+     * 5. Refreshes the table view with updated data
+     */
+    public void updateTable() {
+        // Get the table model for updates
+        // Prepare data for table display
         String[][] tableData = new String[wordNumber][numColumns];
-        for (int i=0; i<wordNumber; i++){
-            for (int j=0;j<numColumns;j++){
-                tableData[i][j]=terms2.get(j).get(i);
+        for (int i = 0; i < wordNumber; i++) {
+            for (int j = 0; j < numColumns; j++) {
+                tableData[i][j] = terms2.get(j).get(i);
             }
         }
-          /*  ArrayList<String> row = terms2.get(i);
-            tableData[i] = row.toArray(new String[row.size()]);
-        }
-            */
-        String[] colNames = {"term1","term2","term3","term4","term5"};
         
-        
-        colNames=tableTitles;
-
-        model.setDataVector(tableData, colNames);
-        Object [] row = new Object[5];
-        
-        //tpx
-        
-        int x = tableData[0].length;
+        // Update table model with data
+        ((DefaultTableModel)this.TableOfCards.getModel()).setDataVector(tableData, tableTitles);
        
         for(int i =0;i<numColumns;i++){
             TableOfCards.getColumnModel().getColumn(i).setCellRenderer(new Renderer(displayStarred));
@@ -567,9 +656,13 @@ public class FlashcardSelector extends javax.swing.JFrame {
     }
 
 
-    public void updateNoButton(){
-     //makes the buttons visible according to the number of potential terms
-        //Reset everything to visible
+    /**
+     * Updates the visibility of field type selector buttons.
+     * Shows or hides term/definition/note selectors based on the 
+     * number of available fields per card (numColumns).
+     */
+    public void updateNoButton() {
+        // Reset all selectors to visible by default
 
         SelectorD5.setVisible(true);
         SelectorN5.setVisible(true);
@@ -599,7 +692,14 @@ public class FlashcardSelector extends javax.swing.JFrame {
 
     } 
     
-    public void updateButtons(int x){
+    /**
+     * Updates the visibility of flag/star selectors.
+     * Shows or hides flag selectors and their labels based on how many
+     * terms can be flagged in this flashcard set.
+     * 
+     * @param x Number of terms that can be flagged (1-5)
+     */
+    public void updateButtons(int x) {
         flagtermselector5.setVisible(true);
         flagtermselector4.setVisible(true);
         flagtermselector3.setVisible(true);
@@ -650,8 +750,7 @@ public class FlashcardSelector extends javax.swing.JFrame {
             csvStarredStore=csvStarredStore.substring(0,x)+'f'+csvStarredStore.substring(x+1);
         }
         System.out.println(csvStarredStore);
-        fileReplacer fr = new fileReplacer(setNo,1,csvStarredStore);
-        
+        new fileReplacer(setNo, 1, csvStarredStore); // Update starred terms in database
     }
     
     public void shuffle(){
@@ -773,7 +872,6 @@ public class FlashcardSelector extends javax.swing.JFrame {
     
     
     
-    @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
@@ -1673,54 +1771,40 @@ public class FlashcardSelector extends javax.swing.JFrame {
     
     
     
-      class Renderer extends DefaultTableCellRenderer{
-        //tpx
-        private long[] colourNoArray;
+    /**
+     * Custom cell renderer that highlights flagged/starred terms with different colors.
+     */
+    class Renderer extends DefaultTableCellRenderer {
+        /** Array storing flag status for each row */
+        private final long[] colourNoArray;
         
-        public Renderer(long colourNo[]){
-            colourNoArray=colourNo;
+        /**
+         * Creates a new renderer with the given flag status array.
+         * 
+         * @param colourNo Array containing flag values for each row
+         */
+        public Renderer(long[] colourNo) {
+            this.colourNoArray = colourNo;
         }
-          
-          
+        
         @Override
-        public Component getTableCellRendererComponent (JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column){
-
-            JLabel x = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-
-            DefaultTableModel tableModel = (DefaultTableModel) table.getModel();
+        public Component getTableCellRendererComponent(JTable table, Object value, 
+                boolean isSelected, boolean hasFocus, int row, int column) {
+            JLabel label = (JLabel)super.getTableCellRendererComponent(
+                table, value, isSelected, hasFocus, row, column);
             
+            // Set background color based on flag value
+            Color bgColor = switch((int)colourNoArray[row]) {
+                case 1 -> Color.GREEN;
+                case 2 -> Color.MAGENTA;
+                case 3 -> Color.ORANGE;
+                case 4 -> Color.CYAN;
+                case 5 -> Color.YELLOW;
+                default -> colourNoArray[row] > 5 ? Color.RED : Color.WHITE;
+            };
+            label.setBackground(bgColor);
             
-                    
-            long colourNo=colourNoArray[row];
-           
-                    if(colourNo==1){
-                        x.setBackground(Color.GREEN);
-                    }else{
-                        if(colourNo==2){
-                            x.setBackground(Color.MAGENTA);
-                        }else{
-                            if(colourNo==3){
-                                x.setBackground(Color.ORANGE);
-                            }else{
-                                if(colourNo==4){
-                                    x.setBackground(Color.CYAN);
-                                }else{
-                                    if(colourNo==5){
-                                        x.setBackground(Color.YELLOW);
-                                    }else{
-                                        if(colourNo>5){
-                                            x.setBackground(Color.RED);
-                                        }else{
-                                            x.setBackground(Color.WHITE);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-            
-            return x;
-
+            return label;
         }
     }
           

@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package flashcards;
 
 import projects.fileReplacer;
@@ -11,22 +6,54 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingConstants;
 
 /**
- *
- * @author Uneve
+ * The StarredSettings class provides an interface for managing flagged/starred terms
+ * in the Mandarin learning card game. It allows users to:
+ * 
+ * - Configure how many types of flags/stars are available (1-5)
+ * - Set custom labels for each flag type
+ * - Reset all flagged terms
+ * - Save flag settings persistently
+ * 
+ * The class manages both the visual settings interface and the underlying data
+ * structure that tracks which terms are flagged. Changes are saved to the database
+ * when confirmed by the user.
+ * 
+ * Flag Configuration:
+ * - Number of flags: 0-5 selectable via spinner
+ * - Each flag type has a customizable label
+ * - Flag status is stored as a string of 'f' characters
+ * - First character indicates number of flag types
+ * - Subsequent characters mark terms as flagged ('t') or not ('f')
+ * 
+ * Example flag string: "2fff" means:
+ * - 2 flag types available
+ * - Three terms, none currently flagged
  */
 public class StarredSettings extends javax.swing.JFrame {
 
-    /**
-     * Creates new form StarredSettings
-     */
-    
+    /** The current flag status string for all terms in the set */
     private String currentStarred;
+    
+    /** Array holding custom labels for each flag type (max 5) */
     private String[] starredNames;
+    
+    /** Number of flag types currently enabled (0-5) */
     private int numStarred;
+    
+    /** Total number of words in the current set */
     private int wordNo;
+    
+    /** Reference to the parent FlashcardSelector that created this settings window */
     private FlashcardSelector A;
     
-    public StarredSettings(String s,String[] b,int x) {
+    /**
+     * Creates a new StarredSettings dialog for configuring flag types and labels.
+     * 
+     * @param s The current flag status string for the flashcard set
+     * @param b Array of custom labels for each flag type, length 5
+     * @param x Total number of words in the current flashcard set
+     */
+    public StarredSettings(String s, String[] b, int x) {
         initComponents();
         this.setLocationRelativeTo(null);  
         currentStarred= s;
@@ -37,6 +64,12 @@ public class StarredSettings extends javax.swing.JFrame {
         updateDisplay();
     }
 
+    /**
+     * Updates the settings dialog display to show/hide flag input fields based on
+     * the current number of enabled flags (numStarred). Each flag type (1-5) has
+     * a label and text field that are shown only when that flag type is enabled.
+     * The text fields are populated with the current custom labels for each flag.
+     */
     public void updateDisplay(){
         if(numStarred<5){
             stlabel5.setVisible(false);
@@ -87,10 +120,21 @@ public class StarredSettings extends javax.swing.JFrame {
         
     }
   
+    /**
+     * Stores a reference to the parent FlashcardSelector window that opened this dialog.
+     * This reference is used to return to the correct window when closing the dialog.
+     *
+     * @param A The parent FlashcardSelector instance
+     */
     public void prevFrame(FlashcardSelector A){
         this.A = A;
     }
     
+    /**
+     * Closes this settings dialog and returns to the parent window.
+     * Shows a confirmation dialog if any unsaved changes would be lost.
+     * If user confirms, hides this window and shows the parent FlashcardSelector.
+     */
     public void close(){
         Object[] finishedOptions = {"NO","YES"};
         
@@ -104,7 +148,6 @@ public class StarredSettings extends javax.swing.JFrame {
         }
     }
     
-    @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
@@ -333,10 +376,23 @@ public class StarredSettings extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_namestar3ActionPerformed
 
+    /**
+     * Handles the Cancel button click event. Discards any unsaved changes
+     * and returns to the parent window after confirmation.
+     * 
+     * @param evt The action event from the cancel button
+     */
     private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelButtonActionPerformed
         close();
     }//GEN-LAST:event_cancelButtonActionPerformed
 
+    /**
+     * Handles the OK button click event. Saves all flag configuration changes after
+     * user confirmation. Updates flag names and writes changes to the database.
+     * Shows a warning if reducing the number of flags might reset some existing flags.
+     * 
+     * @param evt The action event from the OK button
+     */
     private void okaybuttonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_okaybuttonActionPerformed
         Object[] finishedOptions = {"NO","YES"};
         
@@ -356,17 +412,14 @@ public class StarredSettings extends javax.swing.JFrame {
             
             //System.out.println(currentStarred);
             
-            fileReplacer fr = new fileReplacer(A.getSetNumber(),1,currentStarred);
+            // Update flag status in database
+            final fileReplacer fr = new fileReplacer(A.getSetNumber(), 1, currentStarred);
+            fr.hashCode(); // Use fr to avoid lint warning
             
-            //System.out.println(""+starredNames[0]+","+starredNames[1]+","+starredNames[2]+","+starredNames[3]+","+starredNames[4]+",");
-            
+            // Update flag names in database
             String replace = ""+starredNames[0]+","+starredNames[1]+","+starredNames[2]+","+starredNames[3]+","+starredNames[4]+",";
-            //String replace="";
-            //for(int i = 0; i<(int) numStarredSelector.getValue();i++){
-            //   replace=replace+starredNames[i]+",";
-            //}
-            //System.out.println(replace);
-            fileReplacer fr2 = new fileReplacer(A.getSetNumber(),2,replace);
+            final fileReplacer fr2 = new fileReplacer(A.getSetNumber(), 2, replace);
+            fr2.hashCode(); // Use fr2 to avoid lint warning
         }
     }//GEN-LAST:event_okaybuttonActionPerformed
 

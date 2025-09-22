@@ -1,48 +1,77 @@
-//imports
 package login;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import main_page.MainPage;
-import projects.DBConnection;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JOptionPane;
+import projects.DBConnection;
 
-//class NewUser 
+/**
+ * The NewUser class provides the account creation interface for the Mandarin Learning Card Game.
+ * This dialog allows new users to register by providing:
+ * - A unique username
+ * - Their forename and surname
+ * - A password (with confirmation)
+ *
+ * The class validates the input data and creates new user accounts in the database.
+ * It performs checks for:
+ * - Username uniqueness
+ * - Password confirmation match
+ * - Required field completion
+ *
+ * Upon successful registration, the user is added to the database with non-admin privileges
+ * and returned to the login screen.
+ */
 public class NewUser extends javax.swing.JFrame {
 
-    //Initialise varibles
+    /** The username entered by the user (must be unique) */
     private String username;
+    
+    /** The user's first name */
     private String forename;
+    
+    /** The user's last name */
     private String surname;
+    
+    /** The password entered in the first password field */
     private String password;
+    
+    /** The password entered in the confirmation field (must match password) */
     private String passwordConfirm;
+    
+    /** Reference to the login screen that opened this dialog */
     private LoginScreen prevFrame;
           
-    //constructor
+    /**
+     * Creates a new user registration dialog.
+     * Initializes the UI components and centers the dialog on screen.
+     * 
+     * @param A The parent LoginScreen instance that created this dialog
+     */
     public NewUser(LoginScreen A) {
-        prevFrame=A;
+        prevFrame = A;
         initComponents();
         this.setLocationRelativeTo(null);
         this.setVisible(true);
-        
     }
 
-    //Method to add user to database with the parameters of a username, forename, surname and password 
-    public void addUser(String u,String f, String s, String p ){
-    
+    /**
+     * Adds a new user to the database with the provided information.
+     * Creates a non-admin user account with the specified credentials.
+     * 
+     * @param u The username (must be unique)
+     * @param f The user's forename
+     * @param s The user's surname
+     * @param p The user's password (stored as plain text - should be hashed in production)
+     */
+    public void addUser(String u, String f, String s, String p) {
         try {
-            //Create a connection to the database
             Connection con = DBConnection.getConnection();
-            //Create a statement which will be executed to the database through this connection
             Statement statement = con.createStatement();
-            //Create the SQL query
-            String query = "INSERT INTO `users` (`Username`, `Forename`, `Surname`, `Password`,`Admin`) VALUES ('" + u + "', '" + f + "', '" + s + "','" + p + "','0')";
-            //Execute query
+            String query = "INSERT INTO `users` (`Username`, `Forename`, `Surname`, `Password`, `Admin`) " +
+                          "VALUES ('" + u + "', '" + f + "', '" + s + "', '" + p + "', '0')";
             statement.executeUpdate(query);
                 //JOptionPane.showMessageDialog(null,"User Added", "Success", JOptionPane.WARNING_MESSAGE);
             
@@ -62,7 +91,6 @@ public class NewUser extends javax.swing.JFrame {
         }
     }  
 
-    @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
@@ -296,16 +324,29 @@ public class NewUser extends javax.swing.JFrame {
     private void forenameInputActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_forenameInputActionPerformed
     }//GEN-LAST:event_forenameInputActionPerformed
 
+    /**
+     * Handles the Cancel button click event.
+     * Returns to the login screen without creating an account.
+     *
+     * @param evt The action event from the cancel button
+     */
     private void CancelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CancelActionPerformed
-        
-     prevFrame.setVisible(true);
-            this.dispose();   
-        
-
+        prevFrame.setVisible(true);
+        this.dispose();
     }//GEN-LAST:event_CancelActionPerformed
 
+    /**
+     * Handles the Create Account button click event.
+     * Validates input and creates a new user account if all requirements are met:
+     * - All fields must be filled out
+     * - Passwords must match
+     * - Username must be unique
+     * After validation, shows a confirmation dialog before creating the account.
+     *
+     * @param evt The action event from the create account button
+     */
     private void createAccountActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_createAccountActionPerformed
-    username = usernameInput.getText();
+        username = usernameInput.getText();
         forename = forenameInput.getText();
         surname = surnameInput.getText();
         password = String.valueOf(passwordInput.getPassword());
@@ -355,9 +396,15 @@ public class NewUser extends javax.swing.JFrame {
     private void surnameInputActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_surnameInputActionPerformed
     }//GEN-LAST:event_surnameInputActionPerformed
 
+    /**
+     * Handles the window close event (X button or system menu).
+     * Returns to the login screen without creating an account.
+     *
+     * @param evt The window event from closing the form
+     */
     private void formWindowClosed(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosed
-            prevFrame.setVisible(true);
-            this.dispose();
+        prevFrame.setVisible(true);
+        this.dispose();
     }//GEN-LAST:event_formWindowClosed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
@@ -370,26 +417,46 @@ public class NewUser extends javax.swing.JFrame {
     private void passwordInput1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_passwordInput1ActionPerformed
     }//GEN-LAST:event_passwordInput1ActionPerformed
 
+    /**
+     * Clears the default placeholder text from the username field on first click.
+     *
+     * @param evt The mouse event from clicking the username field
+     */
     private void usernameInputMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_usernameInputMouseClicked
-        if(usernameInput.getText().equals("Enter Username Here")){
+        if (usernameInput.getText().equals("Enter Username Here")) {
             usernameInput.setText("");
         }
     }//GEN-LAST:event_usernameInputMouseClicked
 
+    /**
+     * Clears the default placeholder text from the forename field on first click.
+     *
+     * @param evt The mouse event from clicking the forename field
+     */
     private void forenameInputMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_forenameInputMouseClicked
-        if(forenameInput.getText().equals("Enter Forename Here")){
+        if (forenameInput.getText().equals("Enter Forename Here")) {
             forenameInput.setText("");
         }
     }//GEN-LAST:event_forenameInputMouseClicked
 
+    /**
+     * Clears the default placeholder text from the surname field on first click.
+     *
+     * @param evt The mouse event from clicking the surname field
+     */
     private void surnameInputMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_surnameInputMouseClicked
-        if(surnameInput.getText().equals("Enter Surname Here")){
+        if (surnameInput.getText().equals("Enter Surname Here")) {
             surnameInput.setText("");
         }
     }//GEN-LAST:event_surnameInputMouseClicked
 
+    /**
+     * Clears the default placeholder text from the password field on first click.
+     *
+     * @param evt The mouse event from clicking the password field
+     */
     private void passwordInputMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_passwordInputMouseClicked
-        if(String.valueOf(passwordInput.getPassword()).equals("passwordInput")){
+        if (String.valueOf(passwordInput.getPassword()).equals("passwordInput")) {
             passwordInput.setText("");
         }
     }//GEN-LAST:event_passwordInputMouseClicked

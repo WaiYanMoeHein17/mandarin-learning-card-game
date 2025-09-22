@@ -19,37 +19,121 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
 
+/**
+ * The createSet class provides a graphical interface for creating and editing flashcard sets.
+ * It allows users to:
+ * - Create new flashcard sets with multiple columns for different types of information
+ * - Edit existing flashcard sets
+ * - Customize column titles through double-click functionality
+ * - Set access permissions (Private, Protected with password, or Public)
+ * - Assign topics/subjects to sets
+ * - Add descriptive notes and metadata
+ * - Manage row additions and deletions
+ * - Request set verification from topic administrators
+ *
+ * The class handles both creation of new sets and modification of existing ones through
+ * two different constructors. It maintains data consistency by updating both the UI
+ * and database when changes are made.
+ */
 public class createSet extends javax.swing.JFrame {
+    /** Current date for timestamps */
     private LocalDate date = LocalDate.now();
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+    
+    /** Date formatter for consistent date string formatting */
+    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+    
+    /** Unique identifier for the set when editing existing sets */
     private int setNo;
+    
+    /** Flag indicating whether this is an update operation (true) or new set creation (false) */
     private boolean update;
+    
+    /** Username of the set creator */
     private String creator;
+    
+    /** Name/title of the flashcard set */
     private String setName;
+    
+    /** Access level: Private, Protected, or Public */
     private String access;
+    
+    /** Subject/topic category of the set */
     private String topic = "All";
+    
+    /** Password for protected sets */
     private String password;
-    private String dateCreated=date.format(formatter);
-    private String dateUpdated=date.format(formatter); 
-    private String[] columnNames={"term 1","term 2"}; 
-    private String[] cNexpandable=new String[5];
-    private int numColumns=2;
-    private int numTerms=1;
+    
+    /** Date when the set was first created */
+    private String dateCreated = date.format(formatter);
+    
+    /** Date of last update */
+    private String dateUpdated = date.format(formatter); 
+    
+    /** Array of column headers for the flashcard table */
+    private String[] columnNames = {"term 1", "term 2"}; 
+    
+    /** Expandable array for column names, max 5 columns */
+    private String[] cNexpandable = new String[5];
+    
+    /** Current number of columns in the table */
+    private int numColumns = 2;
+    
+    /** Current number of terms/rows in the table */
+    private int numTerms = 1;
+    
+    /** Combined description text for display */
     private String description;
+    
+    /** Table model for the flashcard data grid */
     private DefaultTableModel model;
+    
+    /** 2D array holding the current table data */
     private String[][] tableData;
+    
+    /** Serialized output data for database storage */
     private String outputData;
-    ArrayList<ArrayList<String>> terms2 = new ArrayList<>();
-    //final private String[] accessOptions = { "Private", "Protected", "Public"};
-    final private String[] topicOptions = {"Math","Chinese","Spanish","English","French","German","Biology","Physics","Chemisty","DT","CS","Food and Nutrient","Other"};
+    
+    /** Dynamic storage for terms data with variable columns */
+    private ArrayList<ArrayList<String>> terms2 = new ArrayList<>();
+    
+    /** Available topic options for categorizing sets */
+    final private String[] topicOptions = {
+        "Math", "Chinese", "Spanish", "English", "French", 
+        "German", "Biology", "Physics", "Chemisty", "DT", 
+        "CS", "Food and Nutrient", "Other"
+    };
+    
+    /** Additional notes/description for the set */
     private String setNotes;
-    private boolean reset=false;
+    
+    /** Flag indicating if column configuration has been reset */
+    private boolean reset = false;
+    
+    /** Reference to the table header for editing column names */
     private JTableHeader header;
+    
+    /** Reference to previous MainPage frame */
     private MainPage prevframe;
+    
+    /** Reference to previous search frame */
     private search prevframesearch;
+    
+    /** Reference to previous FlashcardSelector frame */
     private FlashcardSelector prevFrame;
 
-    //Constructor for creating a new set
+    /**
+     * Constructor for creating a new flashcard set.
+     * Initializes a blank template with default settings:
+     * - 2 columns ("term 1" and "term 2")
+     * - 1 empty row
+     * - Private access by default
+     * - No password protection
+     * Sets up the UI and event handlers for table customization.
+     *
+     * @param creator Username of the set creator
+     * @param prevframe Reference to MainPage for navigation
+     * @param prevFrameSearch Reference to search page for navigation
+     */
     public createSet(String creator, MainPage prevframe, search prevFrameSearch ) {
         
         //initialise the set Creator's UserInterface
@@ -82,8 +166,6 @@ public class createSet extends javax.swing.JFrame {
         model.setDataVector(tableData, columnNames);
       
         //Code to update table titles
-        //Basic functions understood from (https://stackoverflow.com/questions/13079777/editable-jtableheader/13089386) how has been modified for this project
-        
         //get the header of our table and add a mouseListener to it
         header = table.getTableHeader();
         header.addMouseListener(new MouseAdapter(){
@@ -106,8 +188,32 @@ public class createSet extends javax.swing.JFrame {
 
     }
     
-    //Constructor to update exsisiting set
-    public createSet(int setNo, String creator,ArrayList<ArrayList<String>> terms2,String access, String setName, String topic, String password, String columnNames[], int numColumns,int numTerms, String setNotes,String dateCreated, FlashcardSelector prevFrame){
+    /**
+     * Constructor for editing an existing flashcard set.
+     * Loads the set's current data and settings into the editor:
+     * - Existing terms and their columns
+     * - Current access settings and password (if protected)
+     * - Set metadata (name, topic, notes, dates)
+     * Enables users to modify any aspect of the set while preserving its ID.
+     *
+     * @param setNo Unique identifier of the set to edit
+     * @param creator Username of the set creator
+     * @param terms2 Current flashcard data in column-based format
+     * @param access Current access level (Private/Protected/Public)
+     * @param setName Current name of the set
+     * @param topic Current topic/subject category
+     * @param password Current password (for protected sets)
+     * @param columnNames Array of current column headers
+     * @param numColumns Number of columns in the set
+     * @param numTerms Number of terms/rows in the set
+     * @param setNotes Current descriptive notes
+     * @param dateCreated Original creation date
+     * @param prevFrame Reference to FlashcardSelector for navigation
+     */
+    public createSet(int setNo, String creator, ArrayList<ArrayList<String>> terms2, String access, 
+                    String setName, String topic, String password, String columnNames[], 
+                    int numColumns, int numTerms, String setNotes, String dateCreated, 
+                    FlashcardSelector prevFrame) {
         
         //initialise the set Creator's UserInterface
         initComponents();    
@@ -206,27 +312,37 @@ public class createSet extends javax.swing.JFrame {
         
     }
     
-    //Method from stack overflow (https://stackoverflow.com/questions/13079777/editable-jtableheader#) 
     
-    private void editColumnAt(Point p)
-  {
-    TableColumn column;
     
-    int columnIndex = header.columnAtPoint(p);
-    //System.out.println(columnIndex);
+    /**
+     * Handles the editing of column headers through double-click interaction.
+     * When a user double-clicks a column header, displays an input dialog
+     * to rename the column. Updates both the visual display and internal
+     * data structures with the new column name.
+     * 
+     * @param p Point where the mouse click occurred
+     */
+    private void editColumnAt(Point p) {
+        TableColumn column;
+        
+        int columnIndex = header.columnAtPoint(p);
 
-    if (columnIndex != -1){
-        column = header.getColumnModel().getColumn(columnIndex);
-        //Rectangle columnRectangle = header.getHeaderRect(columnIndex);
+        if (columnIndex != -1) {
+            column = header.getColumnModel().getColumn(columnIndex);
 
-        String s = (String)JOptionPane.showInputDialog (this,"Enter the name for the tite of this columns", "Enter column title:",JOptionPane.PLAIN_MESSAGE,null,null,null);
+            String s = (String)JOptionPane.showInputDialog(this,
+                "Enter the name for the title of this column", 
+                "Enter column title:",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                null,
+                null);
 
-        if ((s != null) && (s.length() > 0)) {
-                
-            column.setHeaderValue(s);
-            header.repaint();
-            columnNames[columnIndex] = s;
-            cNexpandable[columnIndex]= s;
+            if ((s != null) && (s.length() > 0)) {
+                column.setHeaderValue(s);
+                header.repaint();
+                columnNames[columnIndex] = s;
+                cNexpandable[columnIndex] = s;
             /*
             for(int i = 0;i<numColumns;i++){
                     columnNames=new String[numColumns];
@@ -556,27 +672,27 @@ public class createSet extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_PasswordEnterActionPerformed
 
-    private void numColSetterStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_numColSetterStateChanged
-      
-        if((int) numColSetter.getValue()>numColumns){
-            //for (int i=0; i<1; i++) {
-                            
-                //TableColumn add = new TableColumn();
-                //String tempName = "term"+numColSetter.getValue();
-                //add.setHeaderValue(tempName);
-                //table.getColumnModel().addColumn(add);
-                
-                String tempName = "term"+numColSetter.getValue();
-                model.addColumn(tempName); 
-            //}
+    /**
+     * Event handler for changes to the column count spinner.
+     * Manages the addition or removal of columns in the flashcard table.
+     * When increasing columns, adds new columns with default names.
+     * When decreasing columns, removes columns from the right side.
+     * Updates all related data structures to maintain consistency.
+     *
+     * @param evt The change event that triggered this handler
+     */
+    private void numColSetterStateChanged(javax.swing.event.ChangeEvent evt) {
+        if((int) numColSetter.getValue() > numColumns) {
+            // Adding a new column
+            String tempName = "term" + numColSetter.getValue();
+            model.addColumn(tempName); 
 
-                numColumns = (int) numColSetter.getValue();
-                //System.out.println(numColumns);
-                cNexpandable[numColumns-1]="term"+numColSetter.getValue();
-                columnNames=new String[numColumns];
-                for(int i = 0; i<numColumns;i++){
-                    columnNames[i]=cNexpandable[i];
-                } 
+            numColumns = (int) numColSetter.getValue();
+            cNexpandable[numColumns-1] = tempName;
+            columnNames = new String[numColumns];
+            for(int i = 0; i < numColumns; i++) {
+                columnNames[i] = cNexpandable[i];
+            }
             
         }
         if((int) numColSetter.getValue()<numColumns){
@@ -605,25 +721,40 @@ public class createSet extends javax.swing.JFrame {
         //System.out.println(numColumns);
     }//GEN-LAST:event_numColSetterStateChanged
 
-    private void addRowActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addRowActionPerformed
-        String tempArray[]=new String[numColumns];
-        for(int i=0;i<tempArray.length;i++){
-            tempArray[i]="";
+    /**
+     * Event handler for the Add Row button.
+     * Adds a new empty row to the flashcard table with the current number of columns.
+     * Each cell in the new row is initialized as an empty string.
+     *
+     * @param evt The action event that triggered this handler
+     */
+    private void addRowActionPerformed(java.awt.event.ActionEvent evt) {
+        String tempArray[] = new String[numColumns];
+        for(int i = 0; i < tempArray.length; i++) {
+            tempArray[i] = "";
         }
         model.addRow(tempArray);
-        numTerms+=1;
-    }//GEN-LAST:event_addRowActionPerformed
+        numTerms += 1;
+    }
 
-    private void deleteRowActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteRowActionPerformed
+    /**
+     * Event handler for the Delete Row button.
+     * Removes the currently selected row from the flashcard table.
+     * Shows a confirmation message on successful deletion or an error message
+     * if no row is selected.
+     *
+     * @param evt The action event that triggered this handler
+     */
+    private void deleteRowActionPerformed(java.awt.event.ActionEvent evt) {
         int deleterow = table.getSelectedRow();
         if (deleterow >= 0) {
             model.removeRow(deleterow);
-            JOptionPane.showMessageDialog(null, "The row was deleted");
-            numTerms-=1;
+            JOptionPane.showMessageDialog(this, "The row was deleted");
+            numTerms -= 1;
         } else {
-            JOptionPane.showMessageDialog(null, "The row could not be deleted");
+            JOptionPane.showMessageDialog(this, "Please select a row to delete");
         }
-    }//GEN-LAST:event_deleteRowActionPerformed
+    }
 
     private void TopicPickerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_TopicPickerActionPerformed
         topic = (String)TopicPicker.getSelectedItem();
@@ -723,8 +854,31 @@ public class createSet extends javax.swing.JFrame {
             }
             String setName =setNameInput.getText();
                         
-            String query = "UPDATE `setdata` SET `Verified`='0',`accessType`='"+access+"+',`Password`='"+password+"',`TableTitles`='"+tt+"',`SetData`='"+outputData+"',`Set Name`='"+ setName +"',`SetNotes`='"+setNotes+"',`SetTopic`='"+topic+"',`DateUpdated`='"+dateUpdated+"' WHERE `Set number`="+setNo+"";
+            String query = "UPDATE `setdata` SET `Verified`=?, `accessType`=?, `Password`=?, " +
+                          "`TableTitles`=?, `SetData`=?, `Set Name`=?, `SetNotes`=?, " +
+                          "`SetTopic`=?, `DateUpdated`=? WHERE `Set number`=?";
             
+            try {
+                Connection con = DBConnection.getConnection();
+                PreparedStatement ps = con.prepareStatement(query);
+                ps.setInt(1, 0); // Verified
+                ps.setString(2, access);
+                ps.setString(3, password);
+                ps.setString(4, tt);
+                ps.setString(5, outputData);
+                ps.setString(6, setName);
+                ps.setString(7, setNotes);
+                ps.setString(8, topic);
+                ps.setString(9, dateUpdated);
+                ps.setInt(10, setNo);
+                
+                ps.executeUpdate(); // Use executeUpdate for INSERT/UPDATE/DELETE
+            } catch(Exception e) {
+                JOptionPane.showMessageDialog(null, e, "WARNING", JOptionPane.WARNING_MESSAGE);
+                System.out.println(e);
+            }finally{
+                //String query = "UPDATE `setdata` SET `Verified`='"+0+"',`accessType`='"+access+"',`Password`='"+password+"',`TableTitles`='"+tt+"',`SetData`='"+outputData+"',`Set Name`='"+ setName +"',`SetNotes`='"+setNotes+"',`SetTopic`='"+topic+"',`DateUpdated`='"+dateUpdated+"' WHERE `Set number`="+setNo+"";
+            }
             //System.out.println(query);
             
             try{

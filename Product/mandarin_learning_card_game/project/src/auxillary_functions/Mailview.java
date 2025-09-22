@@ -1,7 +1,6 @@
 
 package auxillary_functions;
 
-//Imports
 import projects.DBConnection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -11,28 +10,62 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.SwingConstants;
 
-
-
+/**
+ * Mailview provides a GUI for viewing and managing individual mail messages.
+ * This class allows users to:
+ * - View message content and metadata
+ * - Forward messages to other users
+ * - Pin/unpin important messages
+ * - Delete messages
+ * - Track message view counts
+ * 
+ * The class manages message state through a database connection and
+ * automatically updates the parent inbox view when changes are made.
+ */
 public class Mailview extends javax.swing.JFrame {
     
-    //initiase variables
-    //variables needed to navigate to other frames
+    /** Username of the currently logged-in user */
     private String currentUser;
-    private MailMenu prevFrame; 
-
-    //set specific variables
-    private int mailIndex;
-    private String sender;
-    private String topic;
-    private int viewTimes;
-    private boolean pinned;
-    private String dateSent;
-    private String message;
     
+    /** Reference to the previous MailMenu frame */
+    private MailMenu prevFrame;
 
-    //constructor
-    //take in the parameters from a single mail selector object
-    public Mailview(String cu, MailMenu p, int mi,String s, String t, int vt, boolean pinned, String dateSent, String message) {
+    /** Unique identifier for the message in the database */
+    private int mailIndex;
+    
+    /** Username of the message sender */
+    private String sender;
+    
+    /** Message topic/subject */
+    private String topic;
+    
+    /** Number of times this message has been viewed */
+    private int viewTimes;
+    
+    /** Flag indicating if this message is pinned */
+    private boolean pinned;
+    
+    /** Date when the message was sent */
+    private String dateSent;
+    
+    /** Content of the message */
+    private String message;
+
+    /**
+     * Creates a new message viewer window.
+     * 
+     * @param cu Current user's username
+     * @param p Reference to previous MailMenu frame
+     * @param mi Message index in database
+     * @param s Sender's username
+     * @param t Message topic
+     * @param vt View count
+     * @param pinned Whether message is pinned
+     * @param dateSent Date message was sent
+     * @param message Message content
+     */
+    public Mailview(String cu, MailMenu p, int mi, String s, String t, int vt, 
+            boolean pinned, String dateSent, String message) {
         
         //create frame
         initComponents();
