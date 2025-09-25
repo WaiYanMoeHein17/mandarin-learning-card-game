@@ -1,4 +1,3 @@
-
 package login;
 
 import java.sql.Connection;
@@ -138,7 +137,24 @@ public class LoginScreen extends javax.swing.JFrame {
         jButton1.setBackground(new java.awt.Color(255, 255, 255));
         jButton1.setFont(new java.awt.Font("Nirmala UI", 1, 14)); // NOI18N
         jButton1.setForeground(new java.awt.Color(255, 255, 255));
-        jButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/ia/projects/help button.png"))); // NOI18N
+        try {
+            java.net.URL imageUrl = getClass().getResource("/projects/help button.png");
+            if (imageUrl != null) {
+                jButton1.setIcon(new javax.swing.ImageIcon(imageUrl));
+            } else {
+                // Fallback to text if image not found
+                jButton1.setText("?");
+                jButton1.setFont(new java.awt.Font("Nirmala UI", 1, 14));
+                jButton1.setForeground(new java.awt.Color(255, 255, 255));
+                System.err.println("Could not find help button image at: /projects/help button.png");
+            }
+        } catch (Exception e) {
+            // Fallback to text if error loading image
+            jButton1.setText("?");
+            jButton1.setFont(new java.awt.Font("Nirmala UI", 1, 14));
+            jButton1.setForeground(new java.awt.Color(255, 255, 255));
+            System.err.println("Error loading help button image: " + e.getMessage());
+        }
         jButton1.setBorder(null);
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {

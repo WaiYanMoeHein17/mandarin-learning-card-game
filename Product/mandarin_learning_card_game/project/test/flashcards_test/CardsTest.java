@@ -37,9 +37,26 @@ public class CardsTest {
     
     @Test
     public void testBasicDataAccess() {
-        assertEquals("Term should match", "Hello", testCard.getTerms());
-        assertEquals("Definition should match", "Ni Hao", testCard.getDefinitions());
-        assertEquals("Notes should match", "Greeting", testCard.getNotes());
+        // Test the full output of each getter method
+        // Since terms, definitions, and notes are defined by the type markers in the constructor,
+        // we need to verify which fields were categorized correctly
+        
+        // Based on our type markers:
+        // term[] = {'t', 't', 't', 'f', 't'} → fields 0, 1, 2, 4 are terms
+        // def[] = {'t', 't', 'f', 't', 'f'} → fields 0, 1, 3 are definitions
+        // notes[] = {'f', 't', 'f', 't', 'f'} → fields 1, 3 are notes
+        
+        // Verify terms
+        String expectedTerms = "Hello\nNi Hao\nGreeting\nCommon\n";
+        assertEquals("Terms should match", expectedTerms, testCard.getTerms());
+        
+        // Verify definitions
+        String expectedDefinitions = "Hello\nNi Hao\nPolite\n";
+        assertEquals("Definitions should match", expectedDefinitions, testCard.getDefinitions());
+        
+        // Verify notes
+        String expectedNotes = "Ni Hao\nPolite\n";
+        assertEquals("Notes should match", expectedNotes, testCard.getNotes());
     }
     
     @Test

@@ -2,6 +2,8 @@ package projects;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
+
 import javax.swing.JOptionPane;
 
 /**
@@ -17,7 +19,9 @@ import javax.swing.JOptionPane;
  * 
  */
 public class DBConnection {
-    
+    private static final String DB_URL = "jdbc:mysql://localhost/mandarin";
+    private static final String USER = "root";
+    private static final String PASS = "KevinDeBruyne17@"; // No password for development
     /**
      * Establishes and returns a connection to the MySQL database.
      * 
@@ -28,28 +32,29 @@ public class DBConnection {
      * @return Connection object if successful, null if connection fails
      */
     public static Connection getConnection() {
-        Connection con = null;
+        //Connection con = null;
         try {
+            Class.forName("com.mysql.cj.jdbc.Driver"); // Load MySQL JDBC Driver
             // Attempt to establish database connection
-            con = DriverManager.getConnection(
-                "jdbc:mysql://localhost/database",  // Database URL
-                "root",                            // Username
-                ""                                 // Password (empty for development)
+            return DriverManager.getConnection(
+                DB_URL,  // Database URL
+                USER,    // Username
+                PASS     // Password (empty for development)
             );
-        } catch (Exception e) {
-            // Show user-friendly error message with support information
-            JOptionPane.showMessageDialog(
-                null,
-                "Error receiving data\n" +
-                "Check your internet connection or try again later\n" +
-                "If error persists contact the following and provide the 'Error Message' if required.\n" +
-                "Help Email: ********************\n" +
-                "School Website: ****************\n" +
-                "Error Message: " + e,
-                "WARNING",
-                JOptionPane.WARNING_MESSAGE
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("MySQL JDBC Driver not found. Include it in your library path.", e);
+        } catch (SQLException e) {
+            String errorMsg = String.format(
+                "Database connection failed:%n" +
+                "URL: %s%n" +
+                "Error: %s%n" +
+                "Check:%n" +
+                "1. Is MySQL running?%n" +
+                "2. Does database 'database' exist?%n" +
+                "3. Are credentials correct?",
+                DB_URL, e.getMessage()
             );
+            throw new RuntimeException(errorMsg, e);
         }
-        return con;
     }
 }

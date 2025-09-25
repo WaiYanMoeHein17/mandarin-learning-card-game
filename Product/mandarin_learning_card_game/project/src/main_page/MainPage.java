@@ -1042,7 +1042,22 @@ public class MainPage extends javax.swing.JFrame {
         jButton2.setBackground(new java.awt.Color(255, 255, 255));
         jButton2.setFont(new java.awt.Font("Nirmala UI", 1, 14)); // NOI18N
         jButton2.setForeground(new java.awt.Color(255, 255, 255));
-        jButton2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/ia/projects/help button.png"))); // NOI18N
+        try {
+            java.net.URL imageUrl = getClass().getResource("/projects/help button.png");
+            if (imageUrl != null) {
+                jButton2.setIcon(new javax.swing.ImageIcon(imageUrl));
+            } else {
+                // Fallback if image not found
+                jButton2.setText("?");
+                jButton2.setFont(new java.awt.Font("Nirmala UI", 1, 14));
+                System.err.println("Could not find help button image at: /projects/help button.png");
+            }
+        } catch (Exception e) {
+            // Fallback if error loading image
+            jButton2.setText("?");
+            jButton2.setFont(new java.awt.Font("Nirmala UI", 1, 14));
+            System.err.println("Error loading help button image: " + e.getMessage());
+        }
         jButton2.setBorder(null);
 
         javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);

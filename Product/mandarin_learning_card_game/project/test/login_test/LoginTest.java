@@ -1,6 +1,7 @@
 package login_test;
 
 import static org.junit.Assert.*;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import login.LoginScreen;
@@ -24,17 +25,23 @@ public class LoginTest {
     
     @Before
     public void setUp() {
-        loginScreen = new LoginScreen();
-        testConnection = DBConnection.getConnection();
-        
-        // Mock UI components that need resources
         try {
-            // Use reflection to bypass image loading
+            // Initialize database connection first
+            testConnection = DBConnection.getConnection();
+            if (testConnection == null) {
+                fail("Could not establish database connection");
+            }
+
+            // Initialize LoginScreen and mock components
+            loginScreen = new LoginScreen();
+            
+            // Mock UI components that need resources
             Field buttonField = LoginScreen.class.getDeclaredField("jButton1");
             buttonField.setAccessible(true);
             JButton button = new JButton();
             button.setIcon(null); // Skip image loading in tests
             buttonField.set(loginScreen, button);
+            
         } catch (Exception e) {
             fail("Test setup failed: " + e.getMessage());
         }
@@ -152,7 +159,7 @@ public class LoginTest {
     
     private void createTestUser(String username, String password) throws SQLException {
         try (PreparedStatement stmt = testConnection.prepareStatement(
-                "INSERT INTO users (username, password, forename, surname, admin) VALUES (?, ?, 'Test', 'User', 'N')")) {
+                "INSERT INTO users (username, password, forename, surname, admin) VALUES (?, ?, 'Test', 'User', 0)")) {
             stmt.setString(1, username);
             stmt.setString(2, password);
             stmt.executeUpdate();
@@ -184,5 +191,17 @@ public class LoginTest {
         field.setAccessible(true);
         JTextField textField = (JTextField) field.get(loginScreen);
         textField.setText(value);
+    }
+    
+    // Add cleanup method to close connection
+    @After
+    public void tearDown() {
+        if (testConnection != null) {
+            try {
+                testConnection.close();
+            } catch (SQLException e) {
+                System.err.println("Error closing test connection: " + e.getMessage());
+            }
+        }
     }
 }

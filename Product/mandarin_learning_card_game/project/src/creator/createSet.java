@@ -530,7 +530,7 @@ public class createSet extends javax.swing.JFrame {
         jButton1.setBackground(new java.awt.Color(255, 255, 255));
         jButton1.setFont(new java.awt.Font("Nirmala UI", 1, 14)); // NOI18N
         jButton1.setForeground(new java.awt.Color(255, 255, 255));
-        jButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/ia/projects/help button.png"))); // NOI18N
+        jButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/projects/help button.png"))); // NOI18N
         jButton1.setBorder(null);
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
@@ -698,8 +698,9 @@ public class createSet extends javax.swing.JFrame {
         if((int) numColSetter.getValue()<numColumns){
             model.setColumnCount((int)numColSetter.getValue());
             //table.removeColumn(table.getColumnModel().getColumn(numColumns-1));
-            columnNames=new String[numColumns-1];
-            for(int i = 0; i<numColumns-1;i++){
+            int newColCount = (int)numColSetter.getValue();
+            columnNames=new String[newColCount];
+            for(int i = 0; i<newColCount;i++){
                     columnNames[i]=cNexpandable[i];
                 } 
         }
@@ -718,6 +719,10 @@ public class createSet extends javax.swing.JFrame {
         
         reset=true;
         numColumns = (int) numColSetter.getValue();
+        // Ensure model column count matches spinner value
+        if (model.getColumnCount() != numColumns) {
+            model.setColumnCount(numColumns);
+        }
         //System.out.println(numColumns);
     }//GEN-LAST:event_numColSetterStateChanged
 
