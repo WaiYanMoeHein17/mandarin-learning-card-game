@@ -13,6 +13,9 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Scanner;
 import javax.swing.JOptionPane;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import javax.swing.UIManager;
 
 import auxillary_functions.MailMenu;
 import auxillary_functions.search;
@@ -81,9 +84,22 @@ public class MainPage extends javax.swing.JFrame {
      * @param username The current user's username for database operations
      */
     public MainPage(LoginScreen ls, String username) {
+        // Set system look and feel for modern appearance
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {
+            System.out.println("Error setting Look and Feel: " + e);
+        }
+        
         // Initialize the Swing components and layout
         initComponents();
         this.setLocationRelativeTo(null);
+        
+        // Setup responsive UI features
+        setupPlaceholders();
+        setupEnterKeyListeners();
+        addKeyboardShortcuts();
+        
         this.setVisible(true);
         
         // Store username for database operations and personalization
@@ -2567,6 +2583,57 @@ public class MainPage extends javax.swing.JFrame {
 
     }//GEN-LAST:event_Cancel5ActionPerformed
 
+    /**
+     * Sets up placeholder text for text fields to provide user guidance
+     */
+    private void setupPlaceholders() {
+        // Placeholder text is now set via form properties
+        // Additional placeholders can be set here if needed
+        enterSetNumberFeild.putClientProperty("JTextField.placeholderText", "Enter set number...");
+    }
+    
+    /**
+     * Sets up Enter key listeners for text fields to improve form navigation
+     */
+    private void setupEnterKeyListeners() {
+        // Add enter key listener to search field
+        searchfield.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    searchbutton.doClick();
+                }
+            }
+        });
+        
+        // Add enter key listener to set number field
+        enterSetNumberFeild.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    jButton1.doClick(); // Add to folder button
+                }
+            }
+        });
+    }
+    
+    /**
+     * Adds keyboard shortcuts to improve accessibility and usability
+     */
+    private void addKeyboardShortcuts() {
+        // Alt+C for Create Set
+        CreateSet.setMnemonic(KeyEvent.VK_C);
+        
+        // Alt+S for Search
+        searchbutton.setMnemonic(KeyEvent.VK_S);
+        
+        // Alt+M for Mail
+        MailButton.setMnemonic(KeyEvent.VK_M);
+        
+        // Alt+E for Edit Folder
+        editFolderButton.setMnemonic(KeyEvent.VK_E);
+    }
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton Cancel5;
     private javax.swing.JButton CreateSet;

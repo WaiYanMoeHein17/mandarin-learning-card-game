@@ -35,11 +35,41 @@ public class LoginScreen extends javax.swing.JFrame {
      * - Centers the window on screen
      */
     public LoginScreen() {
+        // Set modern look and feel
+        try {
+            // Set system look and feel with modifications for modern appearance
+            javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName());
+            
+            // Customize UI components for modern look
+            javax.swing.UIManager.put("Button.arc", 10);
+            javax.swing.UIManager.put("Component.arc", 10);
+            javax.swing.UIManager.put("ProgressBar.arc", 10);
+            javax.swing.UIManager.put("TextComponent.arc", 10);
+            
+            // Update color scheme
+            javax.swing.UIManager.put("Button.background", new Color(66, 103, 178));
+            javax.swing.UIManager.put("Button.foreground", Color.WHITE);
+        } catch (Exception e) {
+            System.err.println("Failed to set modern look and feel: " + e);
+        }
+        
         initComponents();
+        
+        // Style the forgot password link
         String forgetPassword = "<html><u>forgot password</u></html>";
         forgotPassword.setText(forgetPassword);
-        forgotPassword.setForeground(new Color(26, 0, 255));
+        forgotPassword.setForeground(new Color(66, 103, 178));
+        forgotPassword.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        
+        // Set up placeholder behaviors
+        setupPlaceholders();
+        
+        // Add enter key listeners
+        setupEnterKeyListeners();
+        
+        // Center window and make visible
         this.setLocationRelativeTo(null);
+        this.getRootPane().setDefaultButton(login); // Set login as default button for Enter key
         this.setVisible(true);
     }
 
@@ -59,14 +89,17 @@ public class LoginScreen extends javax.swing.JFrame {
         jLabel3 = new javax.swing.JLabel();
         login = new javax.swing.JButton();
         passwordInput = new javax.swing.JPasswordField();
+        passwordInput.putClientProperty("JTextField.placeholderText", "Password");
         jLabel2 = new javax.swing.JLabel();
         usernameInput = new javax.swing.JTextField();
+        usernameInput.putClientProperty("JTextField.placeholderText", "Username");
         createAccount = new javax.swing.JButton();
         jLabel4 = new javax.swing.JLabel();
         forgotPassword = new javax.swing.JLabel();
         jPanel1 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jButton1 = new javax.swing.JButton();
+        togglePasswordVisibility = new javax.swing.JToggleButton();
 
         jLabel3.setText("jLabel3");
 
@@ -396,6 +429,105 @@ public class LoginScreen extends javax.swing.JFrame {
             JOptionPane.QUESTION_MESSAGE);
     }//GEN-LAST:event_jButton1ActionPerformed
 
+    /**
+     * Sets up placeholder text behavior for input fields.
+     * This creates a more modern "hint text" behavior for form fields.
+     */
+    private void setupPlaceholders() {
+        // Username placeholder behavior
+        final String usernamePlaceholder = "Username";
+        if (usernameInput.getText().equals("Enter Username here")) {
+            usernameInput.setText(usernamePlaceholder);
+        }
+        
+        usernameInput.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                if (usernameInput.getText().equals(usernamePlaceholder)) {
+                    usernameInput.setText("");
+                }
+            }
+            
+            @Override
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                if (usernameInput.getText().isEmpty()) {
+                    usernameInput.setText(usernamePlaceholder);
+                }
+            }
+        });
+        
+        // Password placeholder behavior
+        passwordInput.setText("");
+        passwordInput.setEchoChar('•');
+    }
+    
+    /**
+     * Sets up Enter key listeners for form fields to enable quick navigation.
+     * This allows pressing Enter in username field to move to password field,
+     * and pressing Enter in password field to trigger login action.
+     */
+    private void setupEnterKeyListeners() {
+        // Add action for Enter key in username field to move to password field
+        usernameInput.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                if (evt.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+                    passwordInput.requestFocus();
+                }
+            }
+        });
+        
+        // Add action for Enter key in password field to trigger login
+        passwordInput.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                if (evt.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+                    login.doClick();
+                }
+            }
+        });
+        
+        // Add keyboard shortcuts
+        addKeyboardShortcuts();
+    }
+    
+    /**
+     * Adds keyboard shortcuts for common actions.
+     * - Alt+L for Login
+     * - Alt+C for Create Account
+     * - Alt+F for Forgot Password
+     * - Escape to close the application
+     */
+    private void addKeyboardShortcuts() {
+        // Set Alt+L as shortcut for Login button
+        login.setMnemonic('L');
+        
+        // Set Alt+C as shortcut for Create Account button
+        createAccount.setMnemonic('C');
+        
+        // Add Escape key handler to close window
+        this.getRootPane().registerKeyboardAction(
+            e -> System.exit(0),
+            javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
+            javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW
+        );
+    }
+    
+    /**
+     * Toggles the visibility of the password field between visible and masked.
+     * 
+     * @param evt The action event from the toggle button
+     */
+    private void togglePasswordVisibilityActionPerformed(java.awt.event.ActionEvent evt) {
+        if (togglePasswordVisibility.isSelected()) {
+            passwordInput.setEchoChar((char) 0); // Show password
+            togglePasswordVisibility.setToolTipText("Hide password");
+        } else {
+            passwordInput.setEchoChar('•'); // Hide password with bullet characters
+            togglePasswordVisibility.setToolTipText("Show password");
+        }
+    }
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton createAccount;
     private javax.swing.JLabel forgotPassword;
@@ -407,6 +539,7 @@ public class LoginScreen extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JButton login;
     private javax.swing.JPasswordField passwordInput;
+    private javax.swing.JToggleButton togglePasswordVisibility;
     private javax.swing.JTextField usernameInput;
     // End of variables declaration//GEN-END:variables
 }

@@ -45,6 +45,9 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import javax.swing.UIManager;
 
 
 public class FlashcardSelector extends javax.swing.JFrame {
@@ -149,10 +152,19 @@ public class FlashcardSelector extends javax.swing.JFrame {
      * @param setNum Unique identifier for this flashcard set
      */
     public FlashcardSelector(MainPage prevFrame, String currentUser, SetSelector ss, String[] starredNames, String starredInput, int setNum) {
+        // Set system look and feel for modern appearance
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {
+            System.out.println("Error setting Look and Feel: " + e);
+        }
         
         initComponents();
         this.setLocationRelativeTo(null);   
         this.prevFrame=prevFrame;
+        
+        // Add keyboard shortcuts
+        addKeyboardShortcuts();
         
         search=false;
         
@@ -214,10 +226,19 @@ public class FlashcardSelector extends javax.swing.JFrame {
      * @param starredInput String encoding which terms are starred
      */
     public FlashcardSelector(search prevFrame, String currentUser, SetSelector ss, String[] starredNames, String starredInput) {
+        // Set system look and feel for modern appearance
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {
+            System.out.println("Error setting Look and Feel: " + e);
+        }
         
         initComponents();
         this.setLocationRelativeTo(null);   
         this.prevSearchFrame=prevFrame;
+        
+        // Add keyboard shortcuts
+        addKeyboardShortcuts();
         search=true;
         
         //get variables required to check if user has access
@@ -1854,6 +1875,23 @@ public class FlashcardSelector extends javax.swing.JFrame {
     
     
     
+    
+    /**
+     * Adds keyboard shortcuts to improve accessibility and usability
+     */
+    private void addKeyboardShortcuts() {
+        // Alt+S for Start button
+        jButton1.setMnemonic(KeyEvent.VK_S);
+        
+        // Alt+H for Shuffle button
+        jButton2.setMnemonic(KeyEvent.VK_H);
+        
+        // Alt+C for Cancel button
+        jButton3.setMnemonic(KeyEvent.VK_C);
+        
+        // Alt+E for Edit button
+        edit.setMnemonic(KeyEvent.VK_E);
+    }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton Cancel4;

@@ -53,8 +53,39 @@ public class NewUser extends javax.swing.JFrame {
      */
     public NewUser(LoginScreen A) {
         prevFrame = A;
+        
+        // Set modern look and feel
+        try {
+            // Set system look and feel with modifications for modern appearance
+            javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName());
+            
+            // Customize UI components for modern look
+            javax.swing.UIManager.put("Button.arc", 10);
+            javax.swing.UIManager.put("Component.arc", 10);
+            javax.swing.UIManager.put("ProgressBar.arc", 10);
+            javax.swing.UIManager.put("TextComponent.arc", 10);
+            
+            // Update color scheme
+            javax.swing.UIManager.put("Button.background", new java.awt.Color(66, 103, 178));
+            javax.swing.UIManager.put("Button.foreground", java.awt.Color.WHITE);
+        } catch (Exception e) {
+            System.err.println("Failed to set modern look and feel: " + e);
+        }
+        
         initComponents();
+        
+        // Set up placeholder behaviors
+        setupPlaceholders();
+        
+        // Add enter key listeners
+        setupEnterKeyListeners();
+        
+        // Add keyboard shortcuts
+        addKeyboardShortcuts();
+        
+        // Center window and make visible
         this.setLocationRelativeTo(null);
+        this.getRootPane().setDefaultButton(createAccount);
         this.setVisible(true);
     }
 
@@ -578,6 +609,98 @@ public class NewUser extends javax.swing.JFrame {
         return hasSpecial;
     }
 
+    /**
+     * Sets up placeholder text behavior for input fields.
+     * This creates a more modern "hint text" behavior for form fields.
+     */
+    private void setupPlaceholders() {
+        // Username field is already configured in form
+        
+        // Password fields should be empty initially
+        passwordInput.setText("");
+        passwordInput.setEchoChar('•');
+        
+        passwordInput1.setText("");
+        passwordInput1.setEchoChar('•');
+    }
+    
+    /**
+     * Sets up Enter key listeners for form fields to enable quick navigation.
+     * This allows pressing Enter in text fields to move to the next field in sequence.
+     */
+    private void setupEnterKeyListeners() {
+        // Add action for Enter key in username field to move to forename field
+        usernameInput.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                if (evt.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+                    forenameInput.requestFocus();
+                }
+            }
+        });
+        
+        // Add action for Enter key in forename field to move to surname field
+        forenameInput.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                if (evt.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+                    surnameInput.requestFocus();
+                }
+            }
+        });
+        
+        // Add action for Enter key in surname field to move to password field
+        surnameInput.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                if (evt.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+                    passwordInput.requestFocus();
+                }
+            }
+        });
+        
+        // Add action for Enter key in password field to move to confirm password field
+        passwordInput.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                if (evt.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+                    passwordInput1.requestFocus();
+                }
+            }
+        });
+        
+        // Add action for Enter key in confirm password field to trigger account creation
+        passwordInput1.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                if (evt.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+                    createAccount.doClick();
+                }
+            }
+        });
+    }
+    
+    /**
+     * Adds keyboard shortcuts for common actions.
+     * - Alt+C for Create Account
+     * - Alt+X for Cancel
+     * - Escape to close the form
+     */
+    private void addKeyboardShortcuts() {
+        // Set Alt+C as shortcut for Create Account button
+        createAccount.setMnemonic('C');
+        
+        // Set Alt+X as shortcut for Cancel button
+        Cancel.setMnemonic('X');
+        
+        // Add Escape key handler to close window
+        this.getRootPane().registerKeyboardAction(
+            e -> Cancel.doClick(),
+            javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
+            javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW
+        );
+    }
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton Cancel;
     private javax.swing.JButton createAccount;
