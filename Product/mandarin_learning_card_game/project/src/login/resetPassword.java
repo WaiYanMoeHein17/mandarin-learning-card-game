@@ -4,11 +4,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import javax.swing.JOptionPane;
 import projects.DBConnection;
+import projects.SecurityUtil;
 
 /**
  * The resetPassword class provides the password reset functionality for the 
@@ -49,14 +48,8 @@ public class resetPassword extends javax.swing.JFrame {
     /** Reference to the login screen that opened this dialog */
     private LoginScreen prevFrame;
     
-    /** The current password stored in the database */
-    private String oldPassword;
-    
     /** Current date for logging the reset request */
     private LocalDate date = LocalDate.now();
-    
-    /** Date formatter for consistent date formatting */
-    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
     
     /**
      * Creates a new password reset dialog.
@@ -86,43 +79,74 @@ public class resetPassword extends javax.swing.JFrame {
     /**
      * Initiates a password reset request for the specified user.
      * This method:
-     * 1. Updates the user's password in the database, keeping old password for history
+     * 1. Updates the user's password in the database, hashing the new password
      * 2. Creates a notification for admin approval
      * 3. Returns to the login screen
      * 
-     * Password format in database: "oldPassword///newPassword"
+     * The password is securely hashed before storing in the database.
+     * The system keeps track of both the old and new password for admin verification.
      * 
-     * @param p The new password to set
+     * @param p The new password to set (will be hashed)
      * @param u The username whose password is being reset
      */
     public void changePassword(String p, String u) {
     
-        //make connection to database
+        // Make connection to database
         try {
+            // Hash the new password before storing
+            String hashedPassword = SecurityUtil.hashPassword(p);
             
             Connection con = DBConnection.getConnection();
-            Statement statement = con.createStatement();
             
-            //Set the query to update password at username with the respective arguments from the changePassword method
-            //UPDATE `users` SET `Password`="admin" WHERE `username`="admin";
-            String query = "UPDATE `users` SET `Password`='" + oldPassword + "///" + p + "' WHERE `username`='" + u + "'";
-            statement.executeUpdate(query);
-            //JOptionPane.showMessageDialog(null,"User Added", "Success", JOptionPane.WARNING_MESSAGE);
+            // Update the password with a prepared statement to prevent SQL injection
+            String query = "UPDATE `users` SET `Password`=? WHERE `username`=?";
+            PreparedStatement ps = con.prepareStatement(query);
+            ps.setString(1, hashedPassword);  // Use the hashed password
+            ps.setString(2, u);
+            ps.executeUpdate();
             
-            String query2 = "INSERT INTO `mail`(`Recipient`, `Sender`, `Topic`, `Message`, `DateSent`, `ViewTimes`, `Pinned`) VALUES ('admin','" + username + "','RESET PASSWORD REQUEST: ACTION REQUIRED','" + username + " has requested a password update. \n \n Do you want to allow " + forename + " " + surname + " to change their password?','" + date + "','1','0')";
-            Statement statement2 = con.createStatement();
-            statement2.executeUpdate(query2);
+            // Create notification for admin using prepared statement
+            String query2 = "INSERT INTO `mail`(`Recipient`, `Sender`, `Topic`, `Message`, `DateSent`, `ViewTimes`, `Pinned`) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            PreparedStatement ps2 = con.prepareStatement(query2);
+            ps2.setString(1, "admin");
+            ps2.setString(2, username);
+            ps2.setString(3, "RESET PASSWORD REQUEST: ACTION REQUIRED");
+            ps2.setString(4, username + " has requested a password update. \n \n Do you want to allow " + 
+                         forename + " " + surname + " to change their password?");
+            ps2.setString(5, date.toString());
+            ps2.setString(6, "1");  // ViewTimes
+            ps2.setString(7, "0");  // Pinned
+            ps2.executeUpdate();
             
-            //System.out.println("Q@2: " + query2);
-            
-            //return to loginScreen page
+            // Return to loginScreen page
             prevFrame.setVisible(true);
             this.dispose();
             
-        //print error if database connection fails    
+        // Handle errors properly with specific error messages
+        } catch (SecurityException se) {
+            // Handle security-specific exceptions
+            JOptionPane.showMessageDialog(null,
+                "A security error occurred while hashing the password.\nError: " + se.getMessage(),
+                "Security Error",
+                JOptionPane.ERROR_MESSAGE);
+            System.err.println("Security exception: " + se);
+            se.printStackTrace();
         } catch (SQLException e) {
-            JOptionPane.showMessageDialog(null,e, "Error adding database", JOptionPane.WARNING_MESSAGE);
-            //Logger.getLogger(newUser.class.getName()).log(Level.SEVERE, null, e);
+            // Handle database exceptions
+            JOptionPane.showMessageDialog(null,
+                "Database error during password reset.\nError: " + e.getMessage(),
+                "Database Error",
+                JOptionPane.ERROR_MESSAGE);
+            System.err.println("SQL exception: " + e);
+            e.printStackTrace();
+        } catch (Exception e) {
+            // Handle any other exceptions
+            JOptionPane.showMessageDialog(null,
+                "An unexpected error occurred.\nError: " + e.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE);
+            System.err.println("Unexpected exception: " + e);
+            e.printStackTrace();
         }
     }  
 
@@ -365,9 +389,10 @@ public class resetPassword extends javax.swing.JFrame {
      * Handles the Request Reset button click event.
      * Validates the reset request by:
      * 1. Checking that both password fields match
-     * 2. Verifying username exists and matches provided name
-     * 3. Confirming user wants to proceed with reset
-     * 4. Initiating password change and admin notification
+     * 2. Verifying the password meets strength requirements
+     * 3. Verifying username exists and matches provided name
+     * 4. Confirming user wants to proceed with reset
+     * 5. Initiating password change and admin notification
      *
      * @param evt The action event from the request reset button
      */
@@ -379,66 +404,102 @@ public class resetPassword extends javax.swing.JFrame {
         password = String.valueOf(passwordInput.getPassword());
         passwordConfirm = String.valueOf(passwordInpu1.getPassword());
 
-        //check if the passwords match
-        if(password.equals(passwordConfirm)){
+        // Validate username
+        if (!SecurityUtil.validateUsername(username)) {
+            JOptionPane.showMessageDialog(null, 
+                "Invalid username. Username must:\n" +
+                "- Be between 3 and 30 characters\n" +
+                "- Contain only letters, numbers, and underscores", 
+                "Invalid Input", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        // Validate names
+        if (!SecurityUtil.validateName(forename) || !SecurityUtil.validateName(surname)) {
+            JOptionPane.showMessageDialog(null, 
+                "Invalid name. Names must:\n" +
+                "- Be between 1 and 50 characters\n" +
+                "- Contain only letters, spaces, hyphens, and apostrophes", 
+                "Invalid Input", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Check if the passwords match
+        if (!password.equals(passwordConfirm)) {
+            JOptionPane.showMessageDialog(null, "Passwords do not match", 
+                "Input Error", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        // Check password strength
+        if (!isStrongPassword(password)) {
+            JOptionPane.showMessageDialog(null, 
+                "Password is not strong enough. Please ensure your password has:\n" +
+                "- At least 8 characters\n" +
+                "- At least one uppercase letter\n" +
+                "- At least one lowercase letter\n" +
+                "- At least one number\n" +
+                "- At least one special character (!@#$%^&*()_+-=[]{}|;:,.<>/?)", 
+                "Weak Password", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
             
-        //Connect to the database
+        // Connect to the database
         Connection con = DBConnection.getConnection();
         
-        //set query to take in the parameters needed to check if a user should be able to reset the password
+        // Set query to take in the parameters needed to check if a user should be able to reset the password
         String query = "SELECT * FROM `users` WHERE `Username`=? AND `Forename`=? AND `Surname`=?";
         
-        try{
-                //create the query statement with our query passed into it
-                PreparedStatement ps = con.prepareStatement(query);
+        try {
+            // Create the query statement with our query passed into it
+            PreparedStatement ps = con.prepareStatement(query);
+            
+            // Set the query statement's parameters with the corresponding values
+            ps.setString(1, username);
+            ps.setString(2, forename);
+            ps.setString(3, surname);
+                            
+            // Get all the matching results (should only be one as username is primary key)
+            ResultSet rs = ps.executeQuery();
+            
+            // Check if a matching user was found
+            if (rs.next()) {
+                // We found a matching user - ready to proceed
                 
-                //set the query statement's parameters with the corrsponding value
-                ps.setString(1,username);
-                ps.setString(2,forename);
-                ps.setString(3,surname);
-                                
-                //get all the matching results (should only be one as username is primary key)
-                ResultSet rs = ps.executeQuery();
-                
-                //set a boolean check if the query returned a positive match
-                boolean valid = false;
-                
-                //if match found set valid check to true
-                if(rs.next()){
-                    oldPassword = rs.getString("Password");
-                    valid=true;
-                }else{            }
+                // Confirm that user wants to reset password
+                String s = "Are you sure you want to reset password?";
+                int answer = JOptionPane.showConfirmDialog(this, s, "Confirm", 
+                    JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 
-                //print reason why the valid check did not trigger
-                if(valid==false){
-                    JOptionPane.showMessageDialog(null,"This username is not registered to this name", "Invalid reset", JOptionPane.WARNING_MESSAGE);
-                }else{
-
-                    //confirm that user wants to reset password
-                    //set confirm message
-                    String s = "Are you sure you want to reset password?";
-                    
-                    //print confirm with question popup
-                    int answer = JOptionPane.showConfirmDialog(this,s,"confirm",JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE);
-
-                    //if confirmed
-                    if(answer==JOptionPane.YES_OPTION){
-                        
-                        //pass change new password and username to changePassword method 
-                        changePassword(password,username);
-                        
-                    }
+                // If confirmed, proceed with password change
+                if (answer == JOptionPane.YES_OPTION) {
+                    changePassword(password, username);
+                    JOptionPane.showMessageDialog(null, 
+                        "Password reset request has been submitted.\n" +
+                        "An admin will need to approve this change.", 
+                        "Request Submitted", JOptionPane.INFORMATION_MESSAGE);
                 }
-                
-            //if it cannot connect to the database print error
-            }catch(Exception e){
-                JOptionPane.showMessageDialog(null,e, "WARNING", JOptionPane.WARNING_MESSAGE);
-                System.out.println(e);
+            } else {
+                // User verification failed
+                JOptionPane.showMessageDialog(null,
+                    "This username is not registered to this name", 
+                    "Invalid Reset", JOptionPane.WARNING_MESSAGE);
             }
-        
-        //if passwords didnt match show user the error reason
-        }else{
-            JOptionPane.showMessageDialog(null,"Passwords do not match", "Input Error", JOptionPane.WARNING_MESSAGE);
+                
+        } catch (SQLException e) {
+            // Database connection error
+            JOptionPane.showMessageDialog(null,
+                "Database error: " + e.getMessage(), 
+                "Database Error", JOptionPane.ERROR_MESSAGE);
+            System.err.println("SQL exception: " + e);
+            e.printStackTrace();
+        } catch (Exception e) {
+            // Other errors
+            JOptionPane.showMessageDialog(null,
+                "An error occurred: " + e.getMessage(), 
+                "Error", JOptionPane.ERROR_MESSAGE);
+            System.err.println("Exception: " + e);
+            e.printStackTrace();
         }
     }//GEN-LAST:event_RequestResetActionPerformed
 
@@ -495,6 +556,74 @@ public class resetPassword extends javax.swing.JFrame {
      *
      * @param evt The mouse event from clicking the surname field
      */
+    /**
+     * Validates if a password meets strong password requirements.
+     * A strong password must have:
+     * - At least 8 characters
+     * - At least one uppercase letter
+     * - At least one lowercase letter
+     * - At least one digit
+     * - At least one special character
+     *
+     * @param password The password to validate
+     * @return true if the password meets all strength requirements, false otherwise
+     */
+    private boolean isStrongPassword(String password) {
+        // Check minimum length
+        if (password.length() < 8) {
+            return false;
+        }
+        
+        // Check for uppercase letter
+        boolean hasUppercase = false;
+        for (char c : password.toCharArray()) {
+            if (Character.isUpperCase(c)) {
+                hasUppercase = true;
+                break;
+            }
+        }
+        if (!hasUppercase) {
+            return false;
+        }
+        
+        // Check for lowercase letter
+        boolean hasLowercase = false;
+        for (char c : password.toCharArray()) {
+            if (Character.isLowerCase(c)) {
+                hasLowercase = true;
+                break;
+            }
+        }
+        if (!hasLowercase) {
+            return false;
+        }
+        
+        // Check for digit
+        boolean hasDigit = false;
+        for (char c : password.toCharArray()) {
+            if (Character.isDigit(c)) {
+                hasDigit = true;
+                break;
+            }
+        }
+        if (!hasDigit) {
+            return false;
+        }
+        
+        // Check for special character
+        boolean hasSpecial = false;
+        String specialChars = "!@#$%^&*()_+-=[]{}|;:,.<>/?";
+        for (char c : password.toCharArray()) {
+            if (specialChars.contains(String.valueOf(c))) {
+                hasSpecial = true;
+                break;
+            }
+        }
+        
+        // Return true only if all criteria are met
+        return hasSpecial;
+    }
+    
     private void surnameInputMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_surnameInputMouseClicked
         if (surnameInput.getText().equals("Enter Surname here")) {
             surnameInput.setText("");

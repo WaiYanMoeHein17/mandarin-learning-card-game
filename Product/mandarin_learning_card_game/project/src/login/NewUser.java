@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import javax.swing.JOptionPane;
 import projects.DBConnection;
+import projects.SecurityUtil;
 
 /**
  * The NewUser class provides the account creation interface for the Mandarin Learning Card Game.
@@ -68,14 +69,20 @@ public class NewUser extends javax.swing.JFrame {
      */
     public void addUser(String u, String f, String s, String p) {
         try {
-            Connection con = DBConnection.getConnection();
-            Statement statement = con.createStatement();
-            String query = "INSERT INTO `users` (`Username`, `Forename`, `Surname`, `Password`, `Admin`) " +
-                          "VALUES ('" + u + "', '" + f + "', '" + s + "', '" + p + "', '0')";
-            statement.executeUpdate(query);
-                //JOptionPane.showMessageDialog(null,"User Added", "Success", JOptionPane.WARNING_MESSAGE);
+            // Hash the password before storing
+            String hashedPassword = SecurityUtil.hashPassword(p);
             
-            //delte this frame and return to login page    
+            // Use prepared statement to prevent SQL injection
+            Connection con = DBConnection.getConnection();
+            String query = "INSERT INTO `users` (`Username`, `Forename`, `Surname`, `Password`, `Admin`) VALUES (?, ?, ?, ?, '0')";
+            PreparedStatement pst = con.prepareStatement(query);
+            pst.setString(1, u);
+            pst.setString(2, f);
+            pst.setString(3, s);
+            pst.setString(4, hashedPassword);
+            pst.executeUpdate();
+            
+            //delete this frame and return to login page    
             prevFrame.setVisible(true);
             this.dispose();
         
@@ -351,6 +358,39 @@ public class NewUser extends javax.swing.JFrame {
         surname = surnameInput.getText();
         password = String.valueOf(passwordInput.getPassword());
         passwordConfirm = String.valueOf(passwordInput1.getPassword());
+        
+        // Validate username
+        if (!SecurityUtil.validateUsername(username)) {
+            JOptionPane.showMessageDialog(null, 
+                "Invalid username. Username must:\n" +
+                "- Be between 3 and 30 characters\n" +
+                "- Contain only letters, numbers, and underscores", 
+                "Invalid Input", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        // Validate names
+        if (!SecurityUtil.validateName(forename) || !SecurityUtil.validateName(surname)) {
+            JOptionPane.showMessageDialog(null, 
+                "Invalid name. Names must:\n" +
+                "- Be between 1 and 50 characters\n" +
+                "- Contain only letters, spaces, hyphens, and apostrophes", 
+                "Invalid Input", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Check password strength before proceeding
+        if (!isStrongPassword(password)) {
+            JOptionPane.showMessageDialog(null, 
+                "Password is not strong enough. Please ensure your password has:\n" +
+                "- At least 8 characters\n" +
+                "- At least one uppercase letter\n" +
+                "- At least one lowercase letter\n" +
+                "- At least one number\n" +
+                "- At least one special character (!@#$%^&*()_+-=[]{}|;:,.<>/?)", 
+                "Weak Password", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
 
         if(password.equals(passwordConfirm)){
         //getDB values
@@ -470,6 +510,73 @@ public class NewUser extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_passwordInput1MouseClicked
 
+    /**
+     * Validates if a password meets strong password requirements.
+     * A strong password must have:
+     * - At least 8 characters
+     * - At least one uppercase letter
+     * - At least one lowercase letter
+     * - At least one digit
+     * - At least one special character
+     *
+     * @param password The password to validate
+     * @return true if the password meets all strength requirements, false otherwise
+     */
+    private boolean isStrongPassword(String password) {
+        // Check minimum length
+        if (password.length() < 8) {
+            return false;
+        }
+        
+        // Check for uppercase letter
+        boolean hasUppercase = false;
+        for (char c : password.toCharArray()) {
+            if (Character.isUpperCase(c)) {
+                hasUppercase = true;
+                break;
+            }
+        }
+        if (!hasUppercase) {
+            return false;
+        }
+        
+        // Check for lowercase letter
+        boolean hasLowercase = false;
+        for (char c : password.toCharArray()) {
+            if (Character.isLowerCase(c)) {
+                hasLowercase = true;
+                break;
+            }
+        }
+        if (!hasLowercase) {
+            return false;
+        }
+        
+        // Check for digit
+        boolean hasDigit = false;
+        for (char c : password.toCharArray()) {
+            if (Character.isDigit(c)) {
+                hasDigit = true;
+                break;
+            }
+        }
+        if (!hasDigit) {
+            return false;
+        }
+        
+        // Check for special character
+        boolean hasSpecial = false;
+        String specialChars = "!@#$%^&*()_+-=[]{}|;:,.<>/?";
+        for (char c : password.toCharArray()) {
+            if (specialChars.contains(String.valueOf(c))) {
+                hasSpecial = true;
+                break;
+            }
+        }
+        
+        // Return true only if all criteria are met
+        return hasSpecial;
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton Cancel;

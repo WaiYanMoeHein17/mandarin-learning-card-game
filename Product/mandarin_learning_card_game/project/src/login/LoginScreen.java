@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import main_page.MainPage;
 import projects.DBConnection;
+import projects.SecurityUtil;
 import java.awt.Color;
 import javax.swing.JOptionPane;
 
@@ -247,45 +248,57 @@ public class LoginScreen extends javax.swing.JFrame {
         String password = String.valueOf(passwordInput.getPassword());
         
         Connection con = DBConnection.getConnection();
-        String query = "SELECT * FROM users WHERE Username=? AND Password=?";
+        // Changed query to only fetch by username since we'll verify password separately
+        String query = "SELECT * FROM users WHERE Username=?";
         
         try {
-            
             PreparedStatement ps = con.prepareStatement(query);
-            
-            ps.setString(1,username);
-            
-            ps.setString(2,password);
-            
+            ps.setString(1, username);
             ResultSet rs = ps.executeQuery();
                                 
-            if(rs.next()){
+            if(rs.next()) {
+                // Get stored hashed password
+                String storedHash = rs.getString("Password");
                 
-                userID = rs.getString("Username");
-                 
-                //System.out.println(userID);
-                
-                this.setVisible(false);
-                
-                openMainPage();
-                
-                this.dispose();
-                
-            }else{
-                
-                JOptionPane.showMessageDialog(null,"Username or password is not correct", "ERROR", JOptionPane.WARNING_MESSAGE);
-       
+                try {
+                    // Verify the entered password against stored hash
+                    if (SecurityUtil.verifyPassword(password, storedHash)) {
+                        // Password verified successfully
+                        userID = rs.getString("Username");
+                        
+                        this.setVisible(false);
+                        openMainPage();
+                        this.dispose();
+                    } else {
+                        // Password verification failed
+                        JOptionPane.showMessageDialog(null, 
+                            "Username or password is not correct", 
+                            "Authentication Failed", 
+                            JOptionPane.WARNING_MESSAGE);
+                    }
+                } catch (SecurityException se) {
+                    // Handle security-related exceptions separately
+                    JOptionPane.showMessageDialog(null,
+                        "A security error occurred during authentication.\nError: " + se.getMessage(),
+                        "Security Error",
+                        JOptionPane.ERROR_MESSAGE);
+                    System.err.println("Security exception during login: " + se);
+                    se.printStackTrace();
+                }
+            } else {
+                // No user found with that username
+                JOptionPane.showMessageDialog(null,
+                    "Username or password is not correct", 
+                    "Authentication Failed", 
+                    JOptionPane.WARNING_MESSAGE);
             }
-            
-            
-        }catch(Exception e){
-            
-            //if(e.toString().equals("java.lang.IndexOutOfBoundsException: Index 0 out of bounds for length 0")){
-                //System.out.println("ERROR OUT OF BOUNDS");
-            //}else{
-                JOptionPane.showMessageDialog(null,"Error Connecting to the database \n Error Code: " + e , "WARNING", JOptionPane.WARNING_MESSAGE);
-                System.out.println(e);
-            //}
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null,
+                "Error connecting to the database\nError: " + e.getMessage(), 
+                "Database Error", 
+                JOptionPane.ERROR_MESSAGE);
+            System.err.println("Database error during login: " + e);
+            e.printStackTrace();
         }
     
         
