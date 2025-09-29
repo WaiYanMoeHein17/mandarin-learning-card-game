@@ -5,3 +5,4 @@ nbproject/
 .vscode/
 .gitignore
 .gitattributes
+database.sql
