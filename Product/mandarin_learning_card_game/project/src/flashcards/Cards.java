@@ -47,6 +47,24 @@ public class Cards {
     /** Position of this card in the flashcard set */
     private int cardNumber;
     
+    /** SRS level (0=new, 1-5=mastery levels) */
+    private int srsLevel = 0;
+    
+    /** Date of next review in format YYYY-MM-DD */
+    private String nextReviewDate = null;
+    
+    /** Time interval in days until next review */
+    private static final int[] SRS_INTERVALS = {1, 3, 7, 14, 30};
+    
+    /**
+     * Returns the SRS intervals array for spaced repetition
+     * 
+     * @return int array of intervals in days for each SRS level
+     */
+    public static int[] getSrsIntervals() {
+        return SRS_INTERVALS;
+    }
+    
     /**
      * Creates a new flashcard with the specified content and metadata.
      * 
@@ -186,6 +204,84 @@ public class Cards {
 
     public int getCardNumber(){
         return cardNumber;
+    }
+    
+    /**
+     * Gets the current SRS level of this card.
+     * 
+     * @return The SRS level (0=new, 1-5=mastery levels)
+     */
+    public int getSrsLevel() {
+        return srsLevel;
+    }
+    
+    /**
+     * Sets a new SRS level for this card.
+     * 
+     * @param level The new SRS level (0-5)
+     */
+    public void setSrsLevel(int level) {
+        // Keep level within bounds (0-5)
+        this.srsLevel = Math.max(0, Math.min(5, level));
+    }
+    
+    /**
+     * Gets the date when this card should be reviewed next.
+     * 
+     * @return The next review date in format YYYY-MM-DD, or null if not scheduled
+     */
+    public String getNextReviewDate() {
+        return nextReviewDate;
+    }
+    
+    /**
+     * Sets the next review date for this card.
+     * 
+     * @param date The next review date in format YYYY-MM-DD
+     */
+    public void setNextReviewDate(String date) {
+        this.nextReviewDate = date;
+    }
+    
+    /**
+     * Updates the card's SRS level and next review date based on performance.
+     * 
+     * @param performance Performance rating (1-5, where 1=poor, 5=excellent)
+     * @return The next review date
+     */
+    public String updateSrsLevel(int performance) {
+        // Adjust the SRS level based on performance
+        if (performance >= 4) {
+            // Good performance = level up (max 5)
+            srsLevel = Math.min(5, srsLevel + 1);
+        } else if (performance <= 2) {
+            // Poor performance = level down (min 0)
+            srsLevel = Math.max(0, srsLevel - 1);
+        }
+        // else performance = 3, maintain current level
+        
+        // Calculate the next review date
+        return calculateNextReviewDate();
+    }
+    
+    /**
+     * Calculates the next review date based on the current SRS level.
+     * 
+     * @return The next review date in format YYYY-MM-DD
+     */
+    private String calculateNextReviewDate() {
+        // If new card (level 0) or reset card, review tomorrow
+        int interval = (srsLevel > 0 && srsLevel <= 5) ? SRS_INTERVALS[srsLevel - 1] : 1;
+        
+        // Calculate date interval days from now
+        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.LocalDate nextDate = today.plusDays(interval);
+        
+        // Format as YYYY-MM-DD
+        String formattedDate = nextDate.toString();
+        nextReviewDate = formattedDate;
+        
+        return formattedDate;
     }
 
     /*

@@ -1,10 +1,10 @@
 package flashcards;
-import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import javax.swing.*;
-import javax.swing.JOptionPane; 
-import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
 /**
  * The FlashCards class provides the main user interface for displaying and
@@ -62,8 +62,11 @@ public class FlashCards extends javax.swing.JFrame implements KeyListener {
     /** Number of star/flag markers per card */
     private int numberStarred;
     
+    /** Current logged-in username for storing SRS data */
+    private String currentUsername;
     
-    
+    /** Flag indicating whether the SRS panel is visible */
+    private boolean srsVisible = false;
     
     /**
      * Sets up a reference to the parent FlashcardSelector window.
@@ -88,6 +91,10 @@ public class FlashCards extends javax.swing.JFrame implements KeyListener {
         currentIndex = 1;
         numberTerms = DLL.count() - 1;
         updateProgress();
+        
+        // Hide SRS panel initially - only show after first flip
+        srsPanel.setVisible(false);
+        srsVisible = false;
     }
     
     /**
@@ -107,9 +114,17 @@ public class FlashCards extends javax.swing.JFrame implements KeyListener {
         if (termsVisible) {
             flashcardDisplay.setText(currentNode.getData().getDefinitions());
             termsVisible = false;
+            
+            // Show SRS panel when flipping to definition (for rating)
+            srsPanel.setVisible(true);
+            srsVisible = true;
         } else {
             flashcardDisplay.setText(currentNode.getData().getTerms());
             termsVisible = true;
+            
+            // Hide SRS panel when flipping back to term
+            srsPanel.setVisible(false);
+            srsVisible = false;
         }
     }
 
@@ -118,7 +133,102 @@ public class FlashCards extends javax.swing.JFrame implements KeyListener {
      * to either restart or return to selector screen. Updates display and
      * progress indicators.
      */
+    /**
+     * Sets the current username for SRS data storage.
+     * 
+     * @param username The logged-in username
+     */
+    public void setUsername(String username) {
+        this.currentUsername = username;
+        loadSrsData(); // Load SRS data for this user when username is set
+    }
+    
+    /**
+     * 
+     * @param username The current user's username
+     */
+    public void setCurrentUsername(String username) {
+        this.currentUsername = username;
+    }
+    
+    /**
+     * Processes a rating for the current card using the SRS algorithm.
+     * Updates the card's SRS level and schedules next review date.
+     * 
+     * @param rating Performance rating (1-5) where 1 is worst and 5 is best
+     */
+    public void processCardRating(int rating) {
+        // Only process ratings when SRS panel is visible
+        if (srsVisible) {
+            // Update the card's SRS level and get next review date
+            Cards currentCard = currentNode.getData();
+            String nextReviewDate = currentCard.updateSrsLevel(rating);
+            
+            // Store SRS data in the database
+            storeSrsDataInDatabase(currentCard.getCardNumber(), rating, nextReviewDate);
+            
+            // Auto-advance to next card after rating
+            nextCard();
+        }
+    }
+    
+    /**
+     * Stores the SRS data in the database for persistence.
+     * 
+     * @param cardId The ID of the rated card
+     * @param rating The user's performance rating (1-5)
+     * @param nextReviewDate The calculated next review date
+     */
+    private void storeSrsDataInDatabase(int cardId, int rating, String nextReviewDate) {
+        try {
+            // Get database connection
+            Connection con = projects.DBConnection.getConnection();
+            
+            // Check if SRS data already exists for this user and card
+            String checkQuery = "SELECT * FROM srs_data WHERE username = ? AND card_id = ?";
+            PreparedStatement checkStmt = con.prepareStatement(checkQuery);
+            checkStmt.setString(1, currentUsername);
+            checkStmt.setInt(2, cardId);
+            ResultSet rs = checkStmt.executeQuery();
+            
+            if (rs.next()) {
+                // Update existing SRS data
+                String updateQuery = "UPDATE srs_data SET srs_level = ?, last_rating = ?, next_review_date = ? WHERE username = ? AND card_id = ?";
+                PreparedStatement updateStmt = con.prepareStatement(updateQuery);
+                updateStmt.setInt(1, currentNode.getData().getSrsLevel());
+                updateStmt.setInt(2, rating);
+                updateStmt.setString(3, nextReviewDate);
+                updateStmt.setString(4, currentUsername);
+                updateStmt.setInt(5, cardId);
+                updateStmt.executeUpdate();
+                updateStmt.close();
+            } else {
+                // Insert new SRS data
+                String insertQuery = "INSERT INTO srs_data (username, card_id, srs_level, last_rating, next_review_date) VALUES (?, ?, ?, ?, ?)";
+                PreparedStatement insertStmt = con.prepareStatement(insertQuery);
+                insertStmt.setString(1, currentUsername);
+                insertStmt.setInt(2, cardId);
+                insertStmt.setInt(3, currentNode.getData().getSrsLevel());
+                insertStmt.setInt(4, rating);
+                insertStmt.setString(5, nextReviewDate);
+                insertStmt.executeUpdate();
+                insertStmt.close();
+            }
+            
+            rs.close();
+            checkStmt.close();
+            con.close();
+        } catch (Exception e) {
+            System.out.println("Error storing SRS data: " + e.getMessage());
+            // Continue without error - SRS data is not critical to functionality
+        }
+    }
+    
     public void nextCard() {
+        // Hide SRS panel when moving to next card
+        srsPanel.setVisible(false);
+        srsVisible = false;
+        
         if(currentNode.getNext()!=null){
         currentNode=currentNode.getNext();
         flashcardDisplay.setText(currentNode.getData().getTerms());
@@ -336,7 +446,6 @@ public class FlashCards extends javax.swing.JFrame implements KeyListener {
     
     
 //Do not delete :
-    @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
@@ -693,6 +802,21 @@ public class FlashCards extends javax.swing.JFrame implements KeyListener {
         if (evt.getKeyCode() == KeyEvent.VK_RIGHT) {
             nextCard();
         }
+        
+        // Add number key (1-5) handling for SRS ratings
+        if (srsVisible) {
+            if (evt.getKeyCode() == KeyEvent.VK_1) {
+                processCardRating(1);
+            } else if (evt.getKeyCode() == KeyEvent.VK_2) {
+                processCardRating(2);
+            } else if (evt.getKeyCode() == KeyEvent.VK_3) {
+                processCardRating(3);
+            } else if (evt.getKeyCode() == KeyEvent.VK_4) {
+                processCardRating(4);
+            } else if (evt.getKeyCode() == KeyEvent.VK_5) {
+                processCardRating(5);
+            }
+        }
     }
 
     private void NextCardActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_NextCardActionPerformed
@@ -743,6 +867,30 @@ public class FlashCards extends javax.swing.JFrame implements KeyListener {
         A.setVisible(true);
     }//GEN-LAST:event_Cancel4ActionPerformed
 
+    private void srsButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_srsButton1ActionPerformed
+        updateSrsLevel(1);
+        showNextCard();
+    }//GEN-LAST:event_srsButton1ActionPerformed
+
+    private void srsButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_srsButton2ActionPerformed
+        updateSrsLevel(2);
+        showNextCard();
+    }//GEN-LAST:event_srsButton2ActionPerformed
+
+    private void srsButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_srsButton3ActionPerformed
+        updateSrsLevel(3);
+        showNextCard();
+    }//GEN-LAST:event_srsButton3ActionPerformed
+
+    private void srsButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_srsButton4ActionPerformed
+        updateSrsLevel(4);
+        showNextCard();
+    }//GEN-LAST:event_srsButton4ActionPerformed
+
+    private void srsButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_srsButton5ActionPerformed
+        updateSrsLevel(5);
+        showNextCard();
+    }//GEN-LAST:event_srsButton5ActionPerformed
     
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -770,7 +918,210 @@ public class FlashCards extends javax.swing.JFrame implements KeyListener {
     private javax.swing.JLabel lablel3;
     private javax.swing.JLabel lablel4;
     private javax.swing.JLabel lablel5;
+    private javax.swing.JPanel srsPanel;
+    private javax.swing.JButton srsButton1;
+    private javax.swing.JButton srsButton2;
+    private javax.swing.JButton srsButton3;
+    private javax.swing.JButton srsButton4;
+    private javax.swing.JButton srsButton5;
     // End of variables declaration//GEN-END:variables
+
+    /**
+     * Updates the SRS level for the current card based on the user rating.
+     * 
+     * @param rating User rating from 1-5 (1=forgot, 5=perfect recall)
+     */
+    private void updateSrsLevel(int rating) {
+        Cards currentCard = currentNode.getData();
+        int cardId = currentCard.getCardNumber();
+        int currentSrsLevel = currentCard.getSrsLevel();
+        int newSrsLevel;
+        
+        // Calculate new SRS level based on rating
+        if (rating <= 2) {
+            // If rating is 1-2 (poor recall), reset to level 1
+            newSrsLevel = 1;
+        } else {
+            // For ratings 3-5, increase SRS level (max 5)
+            newSrsLevel = Math.min(currentSrsLevel + 1, 5);
+        }
+        
+        // Calculate next review date based on SRS level
+        java.util.Date today = new java.util.Date();
+        java.util.Calendar calendar = java.util.Calendar.getInstance();
+        calendar.setTime(today);
+        
+        // Get the interval in days based on SRS level
+        int intervalDays = 1; // Default for new cards
+        if (newSrsLevel > 0 && newSrsLevel <= 5) {
+            // Use the static intervals from Cards class
+            intervalDays = Cards.getSrsIntervals()[newSrsLevel - 1];
+        }
+        
+        calendar.add(java.util.Calendar.DATE, intervalDays);
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+        String nextReviewDate = sdf.format(calendar.getTime());
+        
+        // Update the card object
+        currentCard.setSrsLevel(newSrsLevel);
+        currentCard.setNextReviewDate(nextReviewDate);
+        
+        // Save to database
+        saveSrsData(cardId, newSrsLevel, rating, nextReviewDate);
+    }
+    
+    /**
+     * Saves the SRS data for the current card to the database.
+     * 
+     * @param cardId The card's unique ID
+     * @param srsLevel The new SRS level (1-5)
+     * @param rating The user's rating (1-5)
+     * @param nextReviewDate The next review date (YYYY-MM-DD)
+     */
+    private void saveSrsData(int cardId, int srsLevel, int rating, String nextReviewDate) {
+        if (currentUsername == null || currentUsername.isEmpty()) {
+            System.out.println("Error: Username not set, cannot save SRS data");
+            return;
+        }
+        
+        try {
+            // Get database connection from DBConnection class in projects package
+            Connection conn = projects.DBConnection.getConnection();
+            
+            // SQL to insert or update SRS data
+            String sql = "INSERT INTO srs_data (username, card_id, srs_level, last_rating, next_review_date) "
+                       + "VALUES (?, ?, ?, ?, ?) "
+                       + "ON DUPLICATE KEY UPDATE "
+                       + "srs_level = ?, last_rating = ?, next_review_date = ?, "
+                       + "last_reviewed_date = CURRENT_TIMESTAMP";
+            
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, currentUsername);
+            pstmt.setInt(2, cardId);
+            pstmt.setInt(3, srsLevel);
+            pstmt.setInt(4, rating);
+            pstmt.setString(5, nextReviewDate);
+            pstmt.setInt(6, srsLevel);
+            pstmt.setInt(7, rating);
+            pstmt.setString(8, nextReviewDate);
+            
+            pstmt.executeUpdate();
+            pstmt.close();
+            conn.close();
+            
+        } catch (Exception e) {
+            System.out.println("Error saving SRS data: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Loads the SRS data for all cards in the current set for the logged-in user.
+     */
+    private void loadSrsData() {
+        if (currentUsername == null || currentUsername.isEmpty() || DLL == null) {
+            return;
+        }
+        
+        try {
+            Connection conn = projects.DBConnection.getConnection();
+            String sql = "SELECT card_id, srs_level, next_review_date FROM srs_data "
+                       + "WHERE username = ?";
+            
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, currentUsername);
+            
+            ResultSet rs = pstmt.executeQuery();
+            
+            // Create a map of card IDs to SRS data for efficient lookup
+            java.util.Map<Integer, int[]> srsLevels = new java.util.HashMap<>();
+            java.util.Map<Integer, String> nextReviewDates = new java.util.HashMap<>();
+            
+            while (rs.next()) {
+                int cardId = rs.getInt("card_id");
+                int srsLevel = rs.getInt("srs_level");
+                String nextReviewDate = rs.getString("next_review_date");
+                
+                srsLevels.put(cardId, new int[]{srsLevel});
+                nextReviewDates.put(cardId, nextReviewDate);
+            }
+            
+            rs.close();
+            pstmt.close();
+            conn.close();
+            
+            // Update the cards in the doubly linked list
+            Node current = DLL.getHead();
+            while (current != null) {
+                Cards card = current.getData();
+                int cardId = card.getCardNumber();
+                
+                if (srsLevels.containsKey(cardId)) {
+                    card.setSrsLevel(srsLevels.get(cardId)[0]);
+                    card.setNextReviewDate(nextReviewDates.get(cardId));
+                }
+                
+                current = current.getNext();
+            }
+            
+        } catch (Exception e) {
+            System.out.println("Error loading SRS data: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Shows the next card and resets term/definition visibility.
+     */
+    /**
+     * Updates the flag/star radio buttons based on the current card's starred status.
+     */
+    private void updateFlagRadioButtons() {
+        char[] starredArray = currentNode.getData().getStarred();
+        
+        // Set each flag radio button based on corresponding starred array value
+        flagtermselector1.setSelected(starredArray[0] == 't');
+        flagtermselector2.setSelected(starredArray[1] == 't');
+        flagtermselector3.setSelected(starredArray[2] == 't');
+        flagtermselector4.setSelected(starredArray[3] == 't');
+        flagtermselector5.setSelected(starredArray[4] == 't');
+    }
+    
+    private void showNextCard() {
+        if (currentNode.getNext() != null) {
+            currentNode = currentNode.getNext();
+            currentIndex++;
+            flashcardDisplay.setText(currentNode.getData().getTerms());
+            termsVisible = true;
+            srsPanel.setVisible(false);
+            srsVisible = false;
+            updateProgress();
+            
+            // Update flag status
+            updateFlagRadioButtons();
+        } else {
+            // At the end of the set
+            int option = JOptionPane.showConfirmDialog(this, 
+                "You've reached the end of this set. Would you like to restart?",
+                "Set Complete", JOptionPane.YES_NO_OPTION);
+                
+            if (option == JOptionPane.YES_OPTION) {
+                // Restart the set
+                currentNode = DLL.getHead();
+                currentIndex = 1;
+                flashcardDisplay.setText(currentNode.getData().getTerms());
+                termsVisible = true;
+                srsPanel.setVisible(false);
+                srsVisible = false;
+                updateProgress();
+                updateFlagRadioButtons();
+            } else {
+                // Return to flashcard selector
+                this.dispose();
+                A.setVisible(true);
+            }
+        }
+    }
 
 
 }

@@ -1368,6 +1368,7 @@ public class FlashcardSelector extends javax.swing.JFrame {
             flashcard.prevFrame(this);
             flashcard.setDLL(createDLL());
             flashcard.setsetName(setName);
+            flashcard.setUsername(currentUser); // Pass the current username for SRS data
             flashcard.setVisible(true);
             flashcard.updateButtons(numStarred);
             flashcard.setNumberStarred(numStarred);
