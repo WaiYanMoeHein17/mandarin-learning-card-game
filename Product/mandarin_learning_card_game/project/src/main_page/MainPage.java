@@ -11,6 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Scanner;
 import javax.swing.JOptionPane;
 import java.awt.event.KeyAdapter;
@@ -833,6 +834,7 @@ public class MainPage extends javax.swing.JFrame {
         searchbutton = new javax.swing.JButton();
         searchfield = new javax.swing.JTextField();
         MailButton = new javax.swing.JButton();
+        progressDashboardButton = new javax.swing.JButton();
         addfolder = new javax.swing.JRadioButton();
         removeFolder = new javax.swing.JRadioButton();
         folderEditorLabel = new javax.swing.JLabel();
@@ -1116,6 +1118,15 @@ public class MainPage extends javax.swing.JFrame {
                 MailButtonActionPerformed(evt);
             }
         });
+        
+        progressDashboardButton.setBackground(new java.awt.Color(46, 204, 113));
+        progressDashboardButton.setForeground(new java.awt.Color(255, 255, 255));
+        progressDashboardButton.setText("Progress Dashboard");
+        progressDashboardButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                progressDashboardButtonActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel5Layout = new javax.swing.GroupLayout(jPanel5);
         jPanel5.setLayout(jPanel5Layout);
@@ -1123,7 +1134,9 @@ public class MainPage extends javax.swing.JFrame {
             jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel5Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(MailButton, javax.swing.GroupLayout.PREFERRED_SIZE, 209, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(MailButton, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(10, 10, 10)
+                .addComponent(progressDashboardButton, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(searchbutton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGap(0, 0, 0)
@@ -1140,7 +1153,8 @@ public class MainPage extends javax.swing.JFrame {
                         .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(searchbutton, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(searchfield, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addComponent(MailButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(MailButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(progressDashboardButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
 
@@ -2568,6 +2582,11 @@ public class MainPage extends javax.swing.JFrame {
         new MailMenu(username, this).setVisible(true);
         this.setVisible(false);
     }//GEN-LAST:event_MailButtonActionPerformed
+    
+    private void progressDashboardButtonActionPerformed(java.awt.event.ActionEvent evt) {
+        // Show the progress dashboard
+        showProgressDashboard();
+    }
 
     private void formWindowClosed(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosed
         //prevFrame.setVisible(true);
@@ -2629,6 +2648,7 @@ public class MainPage extends javax.swing.JFrame {
         
         // Alt+M for Mail
         MailButton.setMnemonic(KeyEvent.VK_M);
+        progressDashboardButton.setMnemonic(KeyEvent.VK_P);
         
         // Alt+E for Edit Folder
         editFolderButton.setMnemonic(KeyEvent.VK_E);
@@ -2651,6 +2671,7 @@ public class MainPage extends javax.swing.JFrame {
     private javax.swing.JButton Folder6;
     private javax.swing.JButton FolderMP;
     private javax.swing.JButton MailButton;
+    private javax.swing.JButton progressDashboardButton;
     private javax.swing.JProgressBar ProgressBar;
     private javax.swing.JRadioButton addfolder;
     private javax.swing.JButton backspace;
@@ -2675,4 +2696,161 @@ public class MainPage extends javax.swing.JFrame {
     private javax.swing.JTextField searchfield;
     private javax.swing.JLabel welcomeText;
     // End of variables declaration//GEN-END:variables
+    
+    // Progress dashboard components
+    private javax.swing.JPanel dashboardPanel;
+    private ProgressDashboardUtils.DashboardComponents dashboardComponents;
+    private boolean dashboardVisible = false;
+    
+    /**
+     * Returns the username for the current user
+     * @return the username
+     */
+    public String getUsername() {
+        return this.username;
+    }
+    
+    /**
+     * Opens the flashcard selector to study cards
+     */
+    public void openFlashcards() {
+        FlashcardSelector fs = new FlashcardSelector(this, username, null, null, null, 0);
+        fs.setVisible(true);
+        this.setVisible(false);
+    }
+    
+    /**
+     * Shows the main content panels and hides the dashboard
+     */
+    public void showMainContent() {
+        // Show the main content panels
+        jPanel2.setVisible(true);
+        jPanel3.setVisible(true);
+        jPanel5.setVisible(true);
+        jPanel6.setVisible(true);
+        
+        // Hide dashboard panel
+        if (dashboardPanel != null) {
+            dashboardPanel.setVisible(false);
+        }
+        
+        dashboardVisible = false;
+    }
+    
+    /**
+     * Shows the progress dashboard with updated data
+     */
+    public void showProgressDashboard() {
+        if (dashboardComponents == null) {
+            // Initialize dashboard on first use
+            dashboardComponents = ProgressDashboardUtils.createDashboardPanel(this);
+            dashboardPanel = dashboardComponents.dashboardPanel;
+            getContentPane().add(dashboardPanel);
+            validate();
+        }
+        
+        // Hide the main content panels
+        jPanel2.setVisible(false);
+        jPanel3.setVisible(false);
+        jPanel5.setVisible(false);
+        jPanel6.setVisible(false);
+        
+        // Show dashboard panel
+        dashboardPanel.setVisible(true);
+        
+        // Update the dashboard data
+        updateDashboardData();
+        
+        dashboardVisible = true;
+    }
+    
+    /**
+     * Updates all the data displayed on the dashboard
+     */
+    public void updateDashboardData() {
+        if (dashboardComponents == null) {
+            return; // Nothing to update if dashboard hasn't been initialized
+        }
+        
+        // Get data from the SRSProgressTracker
+        Map<Integer, Integer> levelCounts = projects.SRSProgressTracker.getSrsLevelCounts(username);
+        int dueCardCount = projects.SRSProgressTracker.getDueCardCount(username);
+        int totalCardCount = projects.SRSProgressTracker.getTotalCardCount(username);
+        Map<String, Integer> weeklyStats = projects.SRSProgressTracker.getWeeklyStats(username);
+        double masteryPercentage = projects.SRSProgressTracker.calculateMasteryPercentage(username);
+        
+        // Update statistics panel
+        if (dashboardComponents.totalCardsValue != null) {
+            dashboardComponents.totalCardsValue.setText(String.valueOf(totalCardCount));
+        }
+        
+        if (dashboardComponents.reviewedCardsValue != null) {
+            dashboardComponents.reviewedCardsValue.setText(String.valueOf(weeklyStats.getOrDefault("reviewed", 0)));
+        }
+        
+        if (dashboardComponents.masteredCardsValue != null) {
+            dashboardComponents.masteredCardsValue.setText(String.valueOf(weeklyStats.getOrDefault("mastered", 0)));
+        }
+        
+        // Update due today panel
+        if (dashboardComponents.dueCardCount != null) {
+            dashboardComponents.dueCardCount.setText(String.valueOf(dueCardCount));
+        }
+        
+        int masteryPercent = (int) Math.round(masteryPercentage);
+        if (dashboardComponents.masteryProgressBar != null) {
+            dashboardComponents.masteryProgressBar.setValue(masteryPercent);
+        }
+        
+        if (dashboardComponents.masteryPercent != null) {
+            dashboardComponents.masteryPercent.setText(masteryPercent + "%");
+        }
+        
+        // Enable/disable study button based on due cards
+        if (dashboardComponents.studyDueCardsButton != null) {
+            dashboardComponents.studyDueCardsButton.setEnabled(dueCardCount > 0);
+        }
+        
+        // Update the level bars
+        if (dashboardComponents.levelBars != null) {
+            updateLevelProgressBars(levelCounts, totalCardCount);
+        }
+    }
+    
+    /**
+     * Updates the progress bars for each SRS level
+     */
+    private void updateLevelProgressBars(Map<Integer, Integer> levelCounts, int totalCardCount) {
+        if (totalCardCount > 0 && dashboardComponents != null && dashboardComponents.levelBars != null) {
+            // Calculate percentages for each level
+            int level0Count = levelCounts.getOrDefault(0, 0);
+            int level1Count = levelCounts.getOrDefault(1, 0);
+            int level2Count = levelCounts.getOrDefault(2, 0);
+            int level3Count = levelCounts.getOrDefault(3, 0);
+            int level4Count = levelCounts.getOrDefault(4, 0);
+            int level5Count = levelCounts.getOrDefault(5, 0);
+            
+            // Update progress bars
+            dashboardComponents.levelBars[0].setValue((int) ((level0Count / (double) totalCardCount) * 100));
+            dashboardComponents.levelBars[1].setValue((int) ((level1Count / (double) totalCardCount) * 100));
+            dashboardComponents.levelBars[2].setValue((int) ((level2Count / (double) totalCardCount) * 100));
+            dashboardComponents.levelBars[3].setValue((int) ((level3Count / (double) totalCardCount) * 100));
+            dashboardComponents.levelBars[4].setValue((int) ((level4Count / (double) totalCardCount) * 100));
+            dashboardComponents.levelBars[5].setValue((int) ((level5Count / (double) totalCardCount) * 100));
+            
+            // Update tooltips with actual count
+            dashboardComponents.levelBars[0].setToolTipText(level0Count + " cards");
+            dashboardComponents.levelBars[1].setToolTipText(level1Count + " cards");
+            dashboardComponents.levelBars[2].setToolTipText(level2Count + " cards");
+            dashboardComponents.levelBars[3].setToolTipText(level3Count + " cards");
+            dashboardComponents.levelBars[4].setToolTipText(level4Count + " cards");
+            dashboardComponents.levelBars[5].setToolTipText(level5Count + " cards");
+        } else if (dashboardComponents != null && dashboardComponents.levelBars != null) {
+            // Reset progress bars if there are no cards
+            for (int i = 0; i < dashboardComponents.levelBars.length; i++) {
+                dashboardComponents.levelBars[i].setValue(0);
+                dashboardComponents.levelBars[i].setToolTipText("0 cards");
+            }
+        }
+    }
 }

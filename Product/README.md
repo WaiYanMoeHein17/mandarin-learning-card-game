@@ -13,3 +13,4 @@ Final Method
 
 ![alt text](relationships_and_dependencies.png)
 ![alt text](system_flow_diagram.png)
+![alt text](progress_dashboard_demo.png)
