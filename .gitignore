@@ -3,7 +3,6 @@ build/
 nbproject/ 
 .DS_Store
 .vscode/
-.gitignore
 .gitattributes
 database.sql
 sourcefiles.txt
